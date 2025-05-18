@@ -1,0 +1,46 @@
+package org.bot.WhatsappWeb;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+public class MapSerializer {
+
+    private static final Path FILE_PATH = Paths.get("src/main/java/org/bot/FilesSaved/saved_data.ser");
+
+    public static void serialize(Map<String, Set<String>> map) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(FILE_PATH))) {
+            oos.writeObject(map);
+            System.out.println("✅ Map serialized to file.");
+        } catch (IOException e) {
+            System.err.println("❌ Error during serialization: " + e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static Map<String, Set<String>> deserialize() {
+        if (!Files.exists(FILE_PATH)) {
+            System.out.println("ℹ️ No previous data file found. Returning empty map.");
+            return new HashMap<>();
+        }
+        try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(FILE_PATH))) {
+            Object obj = ois.readObject();
+            if (obj instanceof Map<?, ?>) {
+                return (Map<String, Set<String>>) obj;
+            }
+            else {
+                System.err.println("❌ Deserialized object is not a Map.");
+                return new HashMap<>();
+            }
+        } catch (IOException | ClassNotFoundException e) {
+            System.err.println("❌ Error during deserialization: " + e.getMessage());
+            return new HashMap<>();
+        }
+    }
+}
