@@ -1,4 +1,4 @@
-package org.bot.SearchSites.Google;
+package org.Tweakio.SearchSites.Google;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -6,7 +6,7 @@ import com.google.gson.JsonObject;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.bot.UserSettings.user;
+import org.Tweakio.UserSettings.user;
 
 import java.io.IOException;
 import java.net.URLEncoder;

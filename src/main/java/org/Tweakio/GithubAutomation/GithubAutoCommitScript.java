@@ -1,10 +1,9 @@
-package org.bot.GithubAutomation;
-
+package org.Tweakio.GithubAutomation;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import okhttp3.*;
-import org.bot.UserSettings.user;
+import org.Tweakio.UserSettings.user;
 
 import java.io.IOException;
 import java.net.URI;
@@ -14,6 +13,11 @@ import java.util.Base64;
 import java.util.Arrays;
 
 public class GithubAutoCommitScript {
+//    public static void main(String[] args) {
+//        GithubAutoCommitScript g = new GithubAutoCommitScript();
+//        System.out.println(g.commit());
+//    }
+
     static user u = new user();
     private static final String GITHUB_TOKEN = u.Gh_Token;
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
@@ -22,7 +26,7 @@ public class GithubAutoCommitScript {
 
     private final OkHttpClient client = new OkHttpClient();
     private final Gson gson = new Gson();
-    private boolean debug = true ;
+    private static final boolean debug = true;
 
     public String commit() {
         try {
@@ -30,30 +34,26 @@ public class GithubAutoCommitScript {
                 System.err.println("❌ Please set the GH_TOKEN environment variable.");
                 System.exit(1);
             }
-            RepoInfo info;
-            try {
-                info = RepoInfo.parse();
-            } catch (IllegalArgumentException e) {
-                if(debug)System.err.println(e.getMessage());
-                return "Invalid GitHub URL: " + repoUrl;
-            }
-            return "Parsed repo -> Owner: " + info.owner + ", Repo: " + info.repo + ", Branch: " + info.branch + ", Path: " + info.path + "\n"+new GithubAutoCommitScript().run(info, info.path.isEmpty() ? "daily-update.txt" : info.path);
-        } catch (IOException e) {
-            System.err.println("Failed to parse GitHub URL: " + e.getMessage());
-            return "Failed to commit at : " + repoUrl;
+            RepoInfo info = RepoInfo.parse();
+            return "Parsed repo -> Owner: " + info.owner + ", Repo: " + info.repo + ", Branch: " + info.branch + ", Path: " + info.path + "\n"
+                    + run(info, info.path.isEmpty() ? "daily-update.txt" : info.path);
+        } catch (IOException | IllegalArgumentException e) {
+            return "❌ Failed: " + e.getMessage();
         }
     }
 
     String run(RepoInfo info, String filePath) throws IOException {
-        String sha = fetchFileSha(info, filePath);
+        String existingSha = fetchFileSha(info, filePath);
         String content = "Automated daily update: " + LocalDate.now() + "\n";
         String base64 = Base64.getEncoder().encodeToString(content.getBytes());
 
         JsonObject payload = new JsonObject();
         payload.addProperty("message", "chore: daily update " + LocalDate.now());
         payload.addProperty("content", base64);
-        if (sha != null) {
-            payload.addProperty("sha", sha);
+        payload.addProperty("branch", info.branch); // optional but good practice
+
+        if (existingSha != null) {
+            payload.addProperty("sha", existingSha); // ✅ correct key
         }
 
         Request request = new Request.Builder()
@@ -68,8 +68,7 @@ public class GithubAutoCommitScript {
                 return "✅ Commit successful: " + response.code() + "\n" + "Url : " + repoUrl;
             } else {
                 assert response.body() != null;
-                return "❌ Commit failed: HTTP "
-                        + response.code() + " → " + response.body().string();
+                return "❌ Commit failed: HTTP " + response.code() + " → " + response.body().string();
             }
         }
     }
@@ -85,11 +84,10 @@ public class GithubAutoCommitScript {
                 JsonObject json = gson.fromJson(response.body().string(), JsonObject.class);
                 return json.has("sha") ? json.get("sha").getAsString() : null;
             } else if (response.code() == 404) {
-                return null;
+                return null; // file doesn't exist
             } else {
-                System.err.println("⚠️ Unable to fetch SHA: HTTP "
-                        + response.code() + " → "
-                        + (response.body() != null ? response.body().string() : "no body"));
+                System.err.println("⚠️ Unable to fetch SHA: HTTP " + response.code() +
+                        " → " + (response.body() != null ? response.body().string() : "no body"));
                 return null;
             }
         }

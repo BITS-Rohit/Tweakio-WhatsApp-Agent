@@ -1,4 +1,4 @@
-package org.bot.WhatsappWeb;
+package org.Tweakio.WhatsappWeb;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class MapSerializer {
 
-    private static final Path FILE_PATH = Paths.get("src/main/java/org/bot/FilesSaved/saved_data.ser");
+    private static final Path FILE_PATH = Paths.get("src/main/java/org/Tweakio/FilesSaved/saved_data.ser");
 
     public static void serialize(Map<String, Set<String>> map) {
         try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(FILE_PATH))) {

@@ -1,4 +1,4 @@
-package org.bot.AI;
+package org.Tweakio.AI;
 
 import com.google.gson.Gson;
 

@@ -1,4 +1,4 @@
-package org.bot.WhatsappWeb;
+package org.Tweakio.WhatsappWeb;
 
 import java.util.Map;
 import java.util.Set;
@@ -8,14 +8,14 @@ import java.util.logging.Logger;
 
 public class WebMain {
     private static final Logger logger = Logger.getLogger(WebMain.class.getName());
-    private static final int RESTART_DELAY_MS = 15_000;
+    private static final int RESTART_DELAY_MS = 5_000;
 
     public static void main(String[] args) {
         while (true) {
             WebLogin bot = null;
             MessH_Modified monitor = null;
             Thread monitorThread;
-
+            long tine = System.currentTimeMillis();
             try {
                 // ───────────────────────────────────────────────────────────────────
                 // 1) Initialize WebLogin and restore any previous state
@@ -36,6 +36,7 @@ public class WebMain {
 
                 // 3) Call webLogin() exactly once here (but do NOT send “✅ Logged in…”)
                 boolean loginOkay = bot.webLogin();
+                monitor.popupRemove();
                 if (!loginOkay) {
                     logger.severe("❌ Login failed—exiting.");
                     System.exit(1);
@@ -50,7 +51,7 @@ public class WebMain {
                 MessH_Modified finalMonitor1 = monitor;
                 monitorThread = new Thread(() -> {
                     logger.info("🚀 Starting message monitoring...");
-                    finalMonitor1.Handler();
+                    finalMonitor1.Handler(tine);
                 }, "Message-Monitor");
 
                 monitorThread.setUncaughtExceptionHandler((t, e) -> {
@@ -78,7 +79,7 @@ public class WebMain {
                     TimeUnit.MILLISECONDS.sleep(RESTART_DELAY_MS);
                 } catch (InterruptedException ignored) {
                     Thread.currentThread().interrupt();
-                    System.exit(0);
+                    System.exit(1);
                 }
             }
         }

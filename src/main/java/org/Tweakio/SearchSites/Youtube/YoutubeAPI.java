@@ -1,4 +1,4 @@
-package org.bot.SearchSites.Youtube;
+package org.Tweakio.SearchSites.Youtube;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -6,7 +6,7 @@ import com.google.gson.JsonParser;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.bot.UserSettings.user;
+import org.Tweakio.UserSettings.user;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;

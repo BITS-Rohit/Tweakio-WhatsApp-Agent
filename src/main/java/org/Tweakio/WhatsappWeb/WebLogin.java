@@ -1,8 +1,7 @@
-package org.bot.WhatsappWeb;
+package org.Tweakio.WhatsappWeb;
 
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
-import com.microsoft.playwright.options.WaitForSelectorState;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
@@ -13,7 +12,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 public class WebLogin {
-    private static final boolean SetHeadless = true;
+    private static final boolean SetHeadless = false;
     private static final String WEB_URL = "https://web.whatsapp.com";
     private static final Path USER_DATA_DIR = Paths.get(System.getProperty("user.dir"), "UserSessions", "User1", "WhatsApp_Session");
     private static final Path QR_SAVE_PATH = Paths.get("src/main/java/org/bot/FilesSaved/qr_code.png");
@@ -87,7 +86,7 @@ public class WebLogin {
     public boolean webLogin() throws InterruptedException {
 
         try {
-            Locator qr = page.locator("canvas[aria-label='Scan this QR code to link a device!']");
+            Locator qr = page.locator("canvas[aria-label=Scan this QR code to link a device!]");
             qr.waitFor(new Locator.WaitForOptions().setTimeout(20_000)); // Longer time in case of long inactivity of web whastapp
             byte[] qrImage = qr.screenshot();
             Files.createDirectories(QR_SAVE_PATH.getParent());
@@ -96,14 +95,12 @@ public class WebLogin {
             System.out.println("📲 Ask the user to scan via http://localhost:8080/qr");
             startQrServer();
         } catch (Exception e) {
-            Thread.sleep(1000);
             if (waitForLoginSuccess()) {
                 startSessionMonitor();
                 System.out.println("✅ Logged in ");
                 return true;
             } else {
                 System.out.println("❌ QR not found and login failed.");
-
             }
         }
         return false;
@@ -129,12 +126,17 @@ public class WebLogin {
 
     public boolean waitForLoginSuccess() {
         try {
-            page.waitForLoadState(LoadState.NETWORKIDLE, new Page.WaitForLoadStateOptions().setTimeout(5000));
-            page.waitForSelector("div[role='textbox']", new Page.WaitForSelectorOptions().setTimeout(5000));
+            page.waitForLoadState(LoadState.NETWORKIDLE, new Page.WaitForLoadStateOptions().setTimeout(15_000));
+            page.waitForSelector("div[role='textbox'] > p.selectable-text.copyable-text",
+                    new Page.WaitForSelectorOptions().setTimeout(25_000));
+//            page.waitForSelector("div[role='textbox']", new Page.WaitForSelectorOptions().setTimeout(5000));
             if (qrServer != null) qrServer.stop(0);
             return true;
         } catch (PlaywrightException e) {
             System.out.println("❌ Login timeout or failed: " + e.getMessage());
+        }
+        catch (Exception e) {
+            System.out.println(e.getMessage());
         }
         return false;
     }

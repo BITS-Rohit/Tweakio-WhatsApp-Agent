@@ -1,14 +1,13 @@
-package org.bot.AI;
+package org.Tweakio.AI;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import okhttp3.*;
-import org.bot.UserSettings.user;
+import org.Tweakio.UserSettings.user;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Scanner;
 
 
 class GroqResponse {
