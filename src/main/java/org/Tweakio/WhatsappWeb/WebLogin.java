@@ -63,7 +63,10 @@ public class WebLogin {
                         "--disable-component-update"
                 ));
 
-
+        if(playwright==null) {
+            System.out.println("Playwright is null");
+            return;
+        }
         context = playwright.chromium().launchPersistentContext(USER_DATA_DIR, options);
         context.addInitScript(
                 "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});" +
@@ -85,7 +88,7 @@ public class WebLogin {
 
         try {
             Locator qr = page.locator("canvas[aria-label='Scan this QR code to link a device!']");
-            qr.waitFor(new Locator.WaitForOptions().setTimeout(8000));
+            qr.waitFor(new Locator.WaitForOptions().setTimeout(20_000)); // Longer time in case of long inactivity of web whastapp
             byte[] qrImage = qr.screenshot();
             Files.createDirectories(QR_SAVE_PATH.getParent());
             Files.write(QR_SAVE_PATH, qrImage);

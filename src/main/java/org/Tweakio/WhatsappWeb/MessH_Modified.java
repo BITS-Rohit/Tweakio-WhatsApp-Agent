@@ -5,6 +5,7 @@ import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.WaitForSelectorState;
 import org.bot.AI.Gemini;
 import org.bot.AI.GroqAI;
+import org.bot.GithubAutomation.GithubAutoCommitScript;
 import org.bot.SearchSites.Google.Google;
 import org.bot.SearchSites.Youtube.YoutubeAPI;
 import org.bot.UserSettings.user;
@@ -51,6 +52,7 @@ public class MessH_Modified {
     YoutubeAPI youtubeAPI = new YoutubeAPI();
     Google google = new Google();
     Gemini gemini = new Gemini();
+    GithubAutoCommitScript github = new GithubAutoCommitScript();
 
     public MessH_Modified(WebLogin webStart, Map<String, Set<String>> initialState) {
         this.web = webStart;
@@ -67,33 +69,42 @@ public class MessH_Modified {
 
     public boolean isConnected() {
         try {
-            if (!loginAnnounced) {
-                if (web.webLogin()) {
-//                    sendMessageToChat(BotNumber, "✅ Logged in...");
-                    loginAnnounced = true;
-                }
-            }
+            // wait a moment for the page to begin loading
             Thread.sleep(1000);
+
             String webUrl = "https://web.whatsapp.com/";
             boolean isLoaded = page.url().equals(webUrl)
                     && page.locator(Chatlist).isVisible();
-            if (!isLoaded && debugMode) {
+
+            if (isLoaded && !loginAnnounced) {
+                // Only send this once—when the page truly finishes loading.
+                sendMessageToChat(BotNumber, "✅ Logged in...");
+                loginAnnounced = true;
+            }
+            else if (!isLoaded && debugMode) {
+                // If not loaded yet, reset loginAnnounced so we can send again after a reload
                 System.out.println("⚠️ WhatsApp not fully loaded.");
                 loginAnnounced = false;
             }
-            return isLoaded;
-        } catch (RestartException re) {
+
+            // Return “true” to indicate “still not connected/loaded” (causes Handler to wait)
+            return !isLoaded;
+        }
+        catch (RestartException re) {
             throw re;
-        } catch (Exception e) {
-            if (debugMode) System.out.println("Error💀💀 : " + e.getMessage());
+        }
+        catch (Exception e) {
+            if (debugMode) System.out.println("Error💀 : " + e.getMessage());
+            // In case of any exception, assume “not loaded”
             loginAnnounced = false;
-            return false;
+            return true;
         }
     }
 
+
     public void Handler() {
         try {
-            if (!isConnected()) {
+            if (isConnected()) {
                 System.out.println("🔴 WhatsApp Web not ready");
                 return;
             }
@@ -255,6 +266,7 @@ public class MessH_Modified {
         else if (fname.equalsIgnoreCase("showmaxchat")) replyToChat(chat, target, ShowMaxChat());
         else if (fname.equals("showq")) ShowQuantifier(chat, target);
         else if (fname.equals("help") || fname.equalsIgnoreCase("showmenu")) ShowMenu(chat, target);
+        else if (fname.equals("github")) replyToChat(chat, target, github.commit());
         else {
             if (query.isEmpty()) {
                 String ll = groqAI.chat(s);
@@ -343,21 +355,25 @@ public class MessH_Modified {
         String MenuMessage = """
                 🌟 *Welcome to Your Smart Assistant!* 🌟
                 _Your all-in-one intelligent companion!_
-
+                
+                ━━━━━━━━━━━━━━━━━━━━
                 🧾 *How to Use Commands:*
                 ➤ *Format:* `Quantifier ➜ Command Name ➜ Input`
                 ➤ _Example:_ `/a ai ➜ Who is Elon Musk?`
-
+                
                 ━━━━━━━━━━━━━━━━━━━━
                 💬 *AI & Chat Tools*
                 ┌─ 🧠 `ai ➜ your question`
                 └─ 👤 `personalai* ➜ your private chat`
-
+                
                 🔍 *Search & Download*
                 ┌─ 🔎 `google ➜ your search query`
                 ├─ 🎥 `yts ➜ search YouTube`
                 └─ 📥 `ytd ➜ YouTube link to download`
-
+                
+                👨‍🎓 *Student & GitHub Tools*
+                ┌─ 🔧 `github ➜ Perform daily commit (student repo)`
+                
                 🛠️ *Group & Bot Management*
                 ┌─ 📝 `setgc ➜ Enable group-wide commands`
                 ├─ 📋 `showgc* ➜ Check group command status`
@@ -367,21 +383,21 @@ public class MessH_Modified {
                 ├─ 📊 `showmaxchat ➜ View current scan count`
                 ├─ 🔄 `s_restart ➜ Soft Restart Bot `
                 └─ 🧨 `hard_restart ➜ (Coming Soon) Full restart ⚠️`
-
+                
                 ✉️ *Messaging Utility*
                 └─ 💌 `send ➜ <number> <your message>` (DM any number)
-
+                
                 ━━━━━━━━━━━━━━━━━━━━
                 🔔 *Need Help?*
                 ➤ Type `Quantifier ➜ help` or `showmenu` anytime!
-
+                
                 💡 *Pro Tips:*
                 ✔️ Use short, clear inputs for faster replies.
                 ✔️ After a reply, wait 5–10 seconds to avoid spam triggers.
-
+                
                 🛡️ *Safety Notice:*
                 _If the bot takes time to respond, it's protecting your account from being flagged!_
-
+                
                 🤖 *Always here to assist you!* 🤖
                 """;
 
@@ -392,7 +408,7 @@ public class MessH_Modified {
         try {
             BotReloader.hardRestart();
         } catch (IOException e) {
-            System.err.println("Error 💀💀 : "+e.getMessage());
+            System.err.println("Error 💀💀 : " + e.getMessage());
         }
     }
 
@@ -402,7 +418,7 @@ public class MessH_Modified {
     }
 
     public void ShowQuantifier(ElementHandle chat, ElementHandle target) {
-        String s = "🌐_Current Quantifier :_"+this.Quantifier;
+        String s = "🌐_Current Quantifier_ :  " + this.Quantifier;
         replyToChat(chat, target, s);
     }
 
@@ -528,7 +544,7 @@ public class MessH_Modified {
         replyToChat(chat, target, " 🌐 Global Mode : " + s);
     }
 
-    /////////--------------- Reply Back
+    //////////--------------- Reply Back
     public synchronized void replyBack(ElementHandle chat, String replyMessage) {
         try {
             if (replyMessage == null || replyMessage.isEmpty()) {
@@ -577,10 +593,13 @@ public class MessH_Modified {
     private String normalizeMessageId(String dataId) {
         if (dataId == null) return null;
         try {
-            System.out.println("📊 Raw data-id: " + dataId);
             String workingId = dataId.replaceFirst("^(true|false)_", ""); // Remove status prefix
             String[] parts = workingId.split("_");
-            System.out.println("📊 Parts: " + Arrays.toString(parts));
+
+            if (debugMode) {
+                System.out.println("📊 Raw data-id: " + dataId);
+                System.out.println("📊 Parts: " + Arrays.toString(parts));
+            }
 
             if (parts.length >= 3) {
                 // Group message format: [status]_[groupID]_[messageID]_[sender]
@@ -638,210 +657,3 @@ public class MessH_Modified {
         throw new RestartException();
     }
 }
-
-// ---------------> Depreciated Content
-
-//    private boolean isMessageNewer(String lastProcessedTime, String currentMessageTime) {
-//        try {
-//            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm a");
-//            Date lastTime = sdf.parse(lastProcessedTime);
-//            Date currentTime = sdf.parse(currentMessageTime);
-//            return !currentTime.before(lastTime);
-//
-//        } catch (Exception e) {
-//            System.out.println("⚠️ Time comparison error: " + e.getMessage());
-//            return true; // Assume it's new if there's an error
-//        }
-//    }
-
-
-//    private void CheckChat(Locator chat) {
-//        try {
-//            if (chat == null) {
-//                System.out.println("Chat Element : Null 🔻🔻🔻");
-//                return;
-//            }
-//            chat.click(); // Open Chat
-//            System.out.println(">>>> Chat Opened✅");
-//            String name = getChatName(chat);
-//            System.out.println("==> Chat Name : " + name);
-//            Locator botMessages = page.locator(BotMess);
-//            if (botMessages.count() == 0) {
-//                System.out.println("No Bot Chats 🔻🔻🔻");
-//                return;
-//            }
-//            else System.out.println("==> Messages Loaded ✅ " + botMessages.count());
-//            System.out.println("*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-//            Locator target;
-//            String cn = null, ct = null, cid = null;
-//            for (int i = botMessages.count() - 1; i >= 0; i--) {
-//                Locator msg = botMessages.nth(i);
-//                String[] parts = msg.textContent().trim().split("\\s+");
-//                if (parts.length > 0 && parts[0].equalsIgnoreCase(Quantifier)) {
-//
-////                    String curTime = getMessageTime(msg);
-//                    String curTime = String.valueOf(System.currentTimeMillis());
-//                    if (debugMode) {
-//                        System.out.println("------");
-//                        System.out.println("├─ Message  : " + msg.textContent());
-//                        System.out.println("├─ Time     : " + curTime);
-//                    }
-//
-//                    if (cn == null && ct == null) {
-//                        cn = name;
-//                        ct = curTime;
-//                    }
-//
-//                    // ------------- Map Cache Handle
-//                    if (cache.containsKey(name)) {
-//                        // existing cache logic unchanged...
-//                        System.out.println(" ++ Inside Cache Block ++ ");
-//                        String value = cache.get(name);
-//                        String oldTime = value.split("--")[1];
-//
-//                        if (Long.parseLong(oldTime)<Long.parseLong(curTime)) {
-//                            target = msg;
-//                            String id = target.getAttribute("data-id");
-//                            if (id == null || id.isEmpty()) {
-//                                ElementHandle wrap = target.evaluateHandle(
-//                                        "el => el.closest('[data-id]')"
-//                                ).asElement();
-//                                id = wrap != null ? wrap.getAttribute("data-id") : null;
-//                            }
-//                            if (id == null || id.isEmpty()) {
-//                                System.out.println("Data-Id not found 🔻🔻🔻");
-//                                return;
-//                            } else if (debugMode) {
-//                                System.out.println("++ Data Id Found ++");
-//                            }
-//
-//                            String N_ID = normalizeMessageId(id);
-//                            String U_ID = N_ID + "--" + curTime;
-//                            if (cid == null) cid = N_ID + "--" + ct;
-//                            if (debugMode) System.out.println("UniqueID : " + U_ID);
-//
-//                            if (cache.get(name).split("--")[0].equalsIgnoreCase(N_ID)) {
-//                                System.out.println("++ Returning Back ++");
-//                                return;
-//                            }
-//                            cache.put(cn, cid); // Update cache to previous
-//
-//                            // Authentication
-//                            String[] idParts = N_ID.split("#");
-//                            String senderNumber = idParts[0].replaceAll("[^0-9]", "");
-//                            boolean auth = isGlobalCheck;
-//                            if (!auth) {
-//                                if (idParts.length == 3) {
-//                                    auth = senderNumber.equals(BotNumber)
-//                                            || senderNumber.equals(AdminNumber);
-//                                } else if (idParts.length == 2) {
-//                                    boolean isOutgoing = (Boolean) target.evaluate(
-//                                            "el => el.closest('.message-out') !== null"
-//                                    );
-//                                    auth = isOutgoing || senderNumber.equals(AdminNumber);
-//                                }
-//                            }
-//                            if (!auth) {
-//                                System.out.println("❌ Unauthorized Command Ignored 🔐");
-//                                return;
-//                            }
-//
-//                            System.out.println("✅ Authenticated command from: " + senderNumber);
-//                            String mess = msg.textContent().trim();
-//                            ElementHandle c = chat.elementHandle();
-//                            ElementHandle t = target.elementHandle();
-//                            queryformat(c, t, mess);
-//                        }
-//
-//                    } else {
-//                        if (debugMode) System.out.println(" ++ No cache Block Inside ++");
-//
-//                        //------------------
-//                        // First time we see a command in this chat, seed and process it
-//                        String id = msg.getAttribute("data-id");
-//                        if (id == null || id.isEmpty()) {
-//                            ElementHandle wrap = msg.evaluateHandle(
-//                                    "el => el.closest('[data-id]')"
-//                            ).asElement();
-//                            id = wrap != null ? wrap.getAttribute("data-id") : null;
-//                        }
-//                        if (id == null || id.isEmpty()) {
-//                            System.out.println("Data-Id not found 🔻🔻🔻");
-//                            return;
-//                        }
-//
-//                        String N_ID = normalizeMessageId(id);
-//                        String initialUID = N_ID + "--" + curTime;
-//                        cache.put(name, initialUID);
-//
-//                        if (debugMode) System.out.println("🔄 Seeded cache for " + name + " -> " + initialUID);
-//
-//                        // Immediately process this first command
-//                        String[] part = N_ID.split("#");
-//                        String senderNumber = part[0].replaceAll("[^0-9]", "");
-//                        boolean auth = isGlobalCheck;
-//                        if (!auth) {
-//                            if (part.length == 3) {
-//                                auth = senderNumber.equals(BotNumber)
-//                                        || senderNumber.equals(AdminNumber);
-//                            } else if (part.length == 2) {
-//                                boolean isOutgoing = (Boolean) msg.evaluate(
-//                                        "el => el.closest('.message-out') !== null"
-//                                );
-//                                auth = isOutgoing || senderNumber.equals(AdminNumber);
-//                            }
-//                        }
-//                        if (!auth) {
-//                            System.out.println("❌ Unauthorized Command Ignored 🔐");
-//                            return;
-//                        }
-//
-//                        System.out.println("✅ Authenticated command from: " + senderNumber);
-//                        String mess = msg.textContent().trim();
-//                        ElementHandle t = msg.elementHandle();
-//                        queryformat(chat.elementHandle(), t, mess);
-//                        return;
-//                        //------------------
-//                    }
-//                }
-//            }
-//
-//        } catch (Exception e) {
-//            System.out.println("Error 💀💀 : " + e.getMessage());
-//        }
-//    }
-
-//    private String getMessageTime(Locator message) {
-//        try {
-//            // Get the outer copyable-text container for this message
-//            ElementHandle copyable = message.elementHandle()
-//                    .evaluateHandle("el => el.closest('div.copyable-text')").asElement();
-//
-//            if (copyable == null) {
-//                System.out.println("⚠️ Could not find copyable-text container");
-//                return null;
-//            }
-//
-//            // Within that container, grab the second span under the aria-hidden wrapper
-//            JSHandle timeHandle = copyable.evaluateHandle(
-//                    "el => { " +
-//                            "  const wrapper = el.querySelector('span[aria-hidden]');" +
-//                            "  return wrapper && wrapper.querySelectorAll('span')[1] || null;" +
-//                            "}"
-//            );
-//
-//            ElementHandle timeEl = timeHandle.asElement();
-//            if (timeEl == null) {
-//                System.out.println("⚠️ Time element not found inside copyable-text");
-//                return null;
-//            }
-//
-//            String timeText = timeEl.textContent().trim();
-//            if (debugMode) System.out.println("🕒 Message Time: " + timeText);
-//            return timeText;
-//
-//        } catch (Exception e) {
-//            System.out.println("⚠️ Error getting time: " + e.getMessage());
-//            return null;
-//        }
-//    }

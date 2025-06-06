@@ -3,7 +3,6 @@ package org.bot.SearchSites.Youtube;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.microsoft.playwright.Page;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -16,7 +15,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
@@ -248,7 +246,7 @@ public class YoutubeAPI {
         return false;
     }
 
-    public static void ytdlpsearch() { /// Still in working
+    public static void ytdlpsearch() {
         String searchQuery = "ytsearch5: Nvidia ";  // fetch top 5 results
 
         // Build command

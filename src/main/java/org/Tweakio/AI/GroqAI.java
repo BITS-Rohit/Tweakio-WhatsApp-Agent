@@ -4,9 +4,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import okhttp3.*;
+import org.bot.UserSettings.user;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Scanner;
 
 
 class GroqResponse {
@@ -37,7 +39,7 @@ public class GroqAI {
     private final Gson gson;
     private final OkHttpClient client;
     private int totaltokens;
-    private final boolean debug = false;
+    private final boolean debug = true;
 
     public GroqAI() {
         totaltokens = 0;
@@ -45,7 +47,7 @@ public class GroqAI {
         client = new OkHttpClient();
         gson = new Gson();
         baseurl = "https://api.groq.com/openai/v1/chat/completions";
-        groqapikey = "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";
+        groqapikey = new user().groqapikey;
     }
 
     public synchronized String chat(String ask) {
@@ -93,7 +95,7 @@ public class GroqAI {
 
             GroqResponse response = gson.fromJson(json, GroqResponse.class);
             if (response.choices == null || response.choices.isEmpty()) {
-                return "⚠️ No choices returned.";
+                return "⚠️ AI returned nothing. ( Possible Error : API Key Expired ";
             }
 
             GroqResponse.Message message = response.choices.getFirst().message;
@@ -108,7 +110,7 @@ public class GroqAI {
     public int tokens() {
         return totaltokens;
     }
-
+//
 //    public static void main(String[] args) {
 //        GroqAI g = new GroqAI();
 //        System.out.println("Enter Search:");
