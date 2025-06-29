@@ -9,32 +9,35 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
-import java.util.Base64;
 import java.util.Arrays;
+import java.util.Base64;
 
 public class GithubAutoCommitScript {
-//    public static void main(String[] args) {
-//        GithubAutoCommitScript g = new GithubAutoCommitScript();
-//        System.out.println(g.commit());
-//    }
 
-    static user u = new user();
-    private static final String GITHUB_TOKEN = u.Gh_Token;
-    private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
-    private static final String repoUrl = u.reponame;
-    private static final String branchname = u.branchName;
+    private final String GITHUB_TOKEN;
+    private final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    private final String repoUrl;
+    private final String branchname;
 
     private final OkHttpClient client = new OkHttpClient();
     private final Gson gson = new Gson();
     private static final boolean debug = true;
 
+    public GithubAutoCommitScript(){
+        this.GITHUB_TOKEN = user.Gh_Token;
+        this.repoUrl = user.reponame;
+        this.branchname = user.branchName;
+    }
+
     public String commit() {
         try {
-            if (GITHUB_TOKEN == null || GITHUB_TOKEN.isEmpty()) {
+            if (GITHUB_TOKEN.isEmpty()) {
                 System.err.println("❌ Please set the GH_TOKEN environment variable.");
                 System.exit(1);
             }
-            RepoInfo info = RepoInfo.parse();
+
+            RepoInfo info = RepoInfo.parse(repoUrl, branchname);
+
             return "Parsed repo -> Owner: " + info.owner + ", Repo: " + info.repo + ", Branch: " + info.branch + ", Path: " + info.path + "\n"
                     + run(info, info.path.isEmpty() ? "daily-update.txt" : info.path);
         } catch (IOException | IllegalArgumentException e) {
@@ -42,7 +45,7 @@ public class GithubAutoCommitScript {
         }
     }
 
-    String run(RepoInfo info, String filePath) throws IOException {
+    private String run(RepoInfo info, String filePath) throws IOException {
         String existingSha = fetchFileSha(info, filePath);
         String content = "Automated daily update: " + LocalDate.now() + "\n";
         String base64 = Base64.getEncoder().encodeToString(content.getBytes());
@@ -50,10 +53,10 @@ public class GithubAutoCommitScript {
         JsonObject payload = new JsonObject();
         payload.addProperty("message", "chore: daily update " + LocalDate.now());
         payload.addProperty("content", base64);
-        payload.addProperty("branch", info.branch); // optional but good practice
+        payload.addProperty("branch", info.branch);
 
         if (existingSha != null) {
-            payload.addProperty("sha", existingSha); // ✅ correct key
+            payload.addProperty("sha", existingSha);
         }
 
         Request request = new Request.Builder()
@@ -84,7 +87,7 @@ public class GithubAutoCommitScript {
                 JsonObject json = gson.fromJson(response.body().string(), JsonObject.class);
                 return json.has("sha") ? json.get("sha").getAsString() : null;
             } else if (response.code() == 404) {
-                return null; // file doesn't exist
+                return null; // File doesn't exist
             } else {
                 System.err.println("⚠️ Unable to fetch SHA: HTTP " + response.code() +
                         " → " + (response.body() != null ? response.body().string() : "no body"));
@@ -93,6 +96,7 @@ public class GithubAutoCommitScript {
         }
     }
 
+    // ✅ Static nested class for parsing repo info
     public static class RepoInfo {
         final String owner;
         final String repo;
@@ -106,33 +110,38 @@ public class GithubAutoCommitScript {
             this.path = path;
         }
 
-        static RepoInfo parse() {
+        public static RepoInfo parse(String repoUrl, String branchName) {
             try {
-                URI uri = new URI(GithubAutoCommitScript.repoUrl);
+                URI uri = new URI(repoUrl);
                 String host = uri.getHost();
                 if (!"github.com".equalsIgnoreCase(host)) {
                     throw new IllegalArgumentException("Not a github.com URL");
                 }
+
                 String[] parts = uri.getPath().split("/");
                 if (parts.length < 3) {
                     throw new IllegalArgumentException("URL path too short: " + uri.getPath());
                 }
+
                 String owner = parts[1];
                 String repo = parts[2].endsWith(".git")
                         ? parts[2].substring(0, parts[2].length() - 4)
                         : parts[2];
-                String branch = branchname;
+                String branch = branchName;
                 String path = "";
+
                 if (parts.length >= 5 && ("tree".equals(parts[3]) || "blob".equals(parts[3]))) {
                     branch = parts[4];
                     if (parts.length > 5) {
                         path = String.join("/", Arrays.copyOfRange(parts, 5, parts.length));
                     }
                 }
+
                 return new RepoInfo(owner, repo, branch, path);
             } catch (URISyntaxException e) {
-                throw new IllegalArgumentException("Invalid URL syntax: " + GithubAutoCommitScript.repoUrl, e);
+                throw new IllegalArgumentException("Invalid URL syntax: " + repoUrl, e);
             }
         }
     }
+
 }

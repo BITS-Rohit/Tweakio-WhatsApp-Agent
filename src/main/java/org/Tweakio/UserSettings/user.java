@@ -1,26 +1,32 @@
 package org.Tweakio.UserSettings;
 
+public final class user {
+    public user() { /* prevent instantiation */ }
 
-// Edit here with urs details --------------->>>>>>>>>>>>>>>>>.
+    // Your bot identity
+    public static final String botName       = ""; // e.g. "[YourName]"
+    public static final String botNumber     = ""; // e.g. "Country code + your number"
+    public static final String adminNumber   = ""; // e.g. "0987654321"
+    public static final String adminName     = ""; // e.g. "[AdminName]"
 
-public class user {
-    public String botName = "Tweakio";  // Ur Bot Name
-    public String botNumber = "91xxxxxxxxxx"; // same as botnumber or ownernumber
-    // 91 is country COde and x is ur number whatsapp.
+    // GitHub credentials
+    public static final String Gh_Token      = ""; // e.g. "ghp_XXXXXXXXXXXXXXXXXXXX"
+    public static final String reponame      = ""; // e.g. "https://github.com/youruser/yourrepo.git"
+    public static final String branchName    = ""; // e.g. "main"
 
-    // in admin number to edit for changing of ur admin
-    public String adminNumber = ""; // No spaces in the number should be there
-    public String adminName = "[ロヒット] ->|Röhît SÃÑ|";
+    // API keys
+    public static final String youtubeapikey = ""; // e.g. "AIzaSyXXXXXXXXXXXXX"
+    public static final String googleapikey  = ""; // e.g. "AIzaSyXXXXXXXXXXXXX"
+    public static final String groqapikey    = ""; // e.g. "gsk_XXXXXXXXXXXXXXXX"
+    public static final String geminiApiKey  = ""; // e.g. "AIzaSyXXXXXXXXXXXXX"
 
-    public String Gh_Token = ""; // Ur Gh token of github
-    public String reponame = "https://github.com/BITS-Rohit/Java_Date.git";
-    // THis is example repalce it with ur file name
+    // Custom Search Engine ID
+    public static final String CSEID         = ""; // e.g. "0123456789abcdef0"
 
-    public String branchName = "main"; // Change it with urs , Default is main
-    public String youtubeapikey = "";
-    public String googleapikey = "";
-    public String CSEID = "";
-    public String groqapikey = "";
-
-    public user() {} // Dont Delete
+    // Agent.ai integration
+    public static final String AgentAIKey    = ""; // e.g. "https://api.agent.ai/v1/agent/XXX/webhook/YYY"
+    public static final String Quantifier    = ""; // e.g. "//"
+    public static final String AgentID       = ""; // e.g. "abcdef123456"
+    public static final String webhook       = ""; // e.g. "webhook-id-1234"
+    public static final String base          = ""; // e.g. "https://api.agent.ai/v1/agent/"
 }

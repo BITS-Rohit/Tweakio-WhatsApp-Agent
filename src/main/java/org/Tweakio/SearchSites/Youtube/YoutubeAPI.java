@@ -20,10 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 import static java.lang.System.in;
 
@@ -34,11 +31,10 @@ public class YoutubeAPI {
     private final String maxResults = "10";
     private final boolean debugmode = true;
     private final static String ytDlpPath = "C:\\Users\\rohit\\Downloads\\yt-dlp.exe";
-    static user u = new user();
 
-    public YoutubeAPI() {
+    public YoutubeAPI( ){
         BaseURL = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=";
-        key = u.youtubeapikey; // Consider externalizing this
+        key = user.youtubeapikey; // Consider externalizing this
         client = new OkHttpClient();
     }
 
@@ -194,25 +190,29 @@ public class YoutubeAPI {
     }
 
     //Utility -------------------------->
-    public synchronized boolean ytdownloadfromUrls(String vidurl, String[] res) {
-        File saveDir = new File(Paths.get(System.getProperty("user.dir"), "src", "main", "java", "org", "bot", "FilesSaved").toString());
+    public boolean ytdownloadfromUrls(String vidurl, String[] res, String[] name) {
+        File saveDir = Paths.get(System.getProperty("user.dir"), "src", "main", "java", "org", "Tweakio", "FilesSaved").toFile();
         if (!saveDir.exists() && !saveDir.mkdirs()) {
             System.out.println("❌ Failed to create directory: " + saveDir.getAbsolutePath());
             return false;
         }
 
         String outputTemplate = saveDir.getAbsolutePath() + File.separator + "%(title)s.%(ext)s";
-
-        List<String> command = Arrays.asList(
+        List<String> command = new ArrayList<>(Arrays.asList(
                 "yt-dlp",
                 "-f", "bestaudio",
                 "-x",
                 "--audio-format", "mp3",
                 "--restrict-filenames",
-                "--ffmpeg-location", "C:\\Users\\rohit\\Downloads\\ffmpeg-7.1.1-full_build\\ffmpeg-7.1.1-full_build\\bin",
                 "-o", outputTemplate,
                 vidurl
-        );
+        ));
+
+        // Add ffmpeg location if OS is Windows
+        if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            String ffmpegPath = "C:\\Users\\rohit\\Downloads\\ffmpeg-7.1.1-full_build\\ffmpeg-7.1.1-full_build\\bin";
+            command.addAll(Arrays.asList("--ffmpeg-location", ffmpegPath));
+        }
 
         try {
             ProcessBuilder builder = new ProcessBuilder(command);
@@ -221,30 +221,60 @@ public class YoutubeAPI {
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
+            String finalFileName = null;
+            String previousLine = null;
+
             while ((line = reader.readLine()) != null) {
                 if (debugmode) System.out.println(line);
+
+                if (line.contains("[ExtractAudio] Destination:") || line.contains("[download] Destination:")) {
+                    finalFileName = line.substring(line.indexOf(":") + 1).trim();
+                } else if (line.contains("file is already in target format mp3") && previousLine != null && previousLine.contains("[ExtractAudio] Not converting")) {
+                    int start = previousLine.indexOf("audio ") + 6;
+                    int end = previousLine.indexOf("; file is already");
+                    if (start > 0 && end > start) {
+                        finalFileName = previousLine.substring(start, end).trim();
+                    }
+                }
+
+                previousLine = line;
             }
 
             int exitCode = process.waitFor();
-            if (exitCode == 0) {
-                String fileName = outputTemplate.replace("%(title)s.%(ext)s", "").trim();  // Assuming filename pattern follows this
-                File downloadedFile = new File(fileName); // Get file path
-                res[0] = downloadedFile.getAbsolutePath();
-                System.out.println("✅✅ Downloaded successfully");
-                return true;
+
+            // Fallback if filename was never parsed
+            if (finalFileName == null) {
+                File[] mp3s = saveDir.listFiles((dir, name1) -> name1.toLowerCase().endsWith(".mp3"));
+                if (mp3s != null && mp3s.length > 0) {
+                    Arrays.sort(mp3s, Comparator.comparingLong(File::lastModified).reversed());
+                    finalFileName = mp3s[0].getAbsolutePath();
+                }
+            }
+
+            if (exitCode == 0 && finalFileName != null) {
+                File downloadedFile = new File(finalFileName);
+                if (downloadedFile.exists()) {
+                    res[0] = downloadedFile.getAbsolutePath();
+                    name[0] = downloadedFile.getName();
+                    System.out.println("✅✅ Downloaded successfully to: " + res[0]);
+                    return true;
+                } else {
+                    System.err.println("❌ Download reported success, but file not found: " + finalFileName);
+                }
             } else {
                 System.out.println("🔻🔻 Nope, Not this time. Downloading Error");
             }
 
         } catch (IOException e) {
-            System.out.println("Reader Error: " + e.getMessage());
+            System.out.println("❌ Reader Error: " + e.getMessage());
         } catch (InterruptedException e) {
-            System.out.println("Exit Code error: " + e.getMessage());
-            Thread.currentThread().interrupt(); // reset interrupted state
+            System.out.println("❌ Interrupted: " + e.getMessage());
+            Thread.currentThread().interrupt();
         }
 
         return false;
     }
+
 
     public static void ytdlpsearch() {
         String searchQuery = "ytsearch5: Nvidia ";  // fetch top 5 results
@@ -304,9 +334,9 @@ public class YoutubeAPI {
         }
     }
 
-    public static void main(String[] args) {
-        YoutubeAPI a = new YoutubeAPI();
-        System.out.println(a.ytdownloadfromUrls("https://www.youtube.com/watch?v=TU2Hrw10YLk", new String[1]));
-    }
+//    public static void main(String[] args) {
+//        YoutubeAPI a = new YoutubeAPI();
+//        System.out.println(a.ytdownloadfromUrls("https://www.youtube.com/watch?v=TU2Hrw10YLk", new String[1]));
+//    }
 }
 

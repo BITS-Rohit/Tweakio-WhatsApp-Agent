@@ -1,4 +1,4 @@
-package org.bot.WhatsappWeb;
+package org.Tweakio.WhatsappWeb;
 
 import java.io.File;
 import java.io.IOException;

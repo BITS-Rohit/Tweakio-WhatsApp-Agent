@@ -1,5 +1,6 @@
 package org.Tweakio.SearchSites.Google;
 
+import com.google.api.services.gmail.model.Profile;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -14,9 +15,8 @@ import java.nio.charset.StandardCharsets;
 
 public class Google {
 
-    static user u = new user();
-    private static final String API_KEY = u.googleapikey;
-    private static final String CSE_ID = u.CSEID;
+    private final String API_KEY;
+    private final String CSE_ID;
     private static final String BASE_URL = "https://www.googleapis.com/customsearch/v1";
     private static final int MAX_RESULTS = 10;
 
@@ -24,12 +24,17 @@ public class Google {
     private final Gson gson;
 
     public Google() {
-        client = new OkHttpClient();
-        gson = new Gson();
+        this.API_KEY = user.googleapikey;
+        this.CSE_ID = user.CSEID;
+        this.client = new OkHttpClient();
+        this.gson = new Gson();
     }
 
     public String google(String query) {
-        if (API_KEY.isEmpty() || CSE_ID.isEmpty()) return "Key Not Set for this command ";
+        if (API_KEY.isEmpty() || CSE_ID.isEmpty()) {
+            return "❌ Google API key or CSE ID not set in profile: " ;
+        }
+
         String url = BASE_URL +
                 "?key=" + API_KEY +
                 "&cx=" + CSE_ID +
@@ -42,13 +47,12 @@ public class Google {
             if (!response.isSuccessful() || response.body() == null) {
                 return "⚠️ Google API HTTP " + response.code();
             }
+
             JsonObject json = gson.fromJson(response.body().string(), JsonObject.class);
 
             if (json.has("error")) {
                 JsonObject err = json.getAsJsonObject("error");
-                String msg = err.has("message")
-                        ? err.get("message").getAsString()
-                        : "Unknown error";
+                String msg = err.has("message") ? err.get("message").getAsString() : "Unknown error";
                 return "⚠️ Google API error: " + msg;
             }
 
@@ -59,9 +63,7 @@ public class Google {
                 return "⚠️ No search information available.";
             }
 
-            JsonArray items = json.has("items")
-                    ? json.getAsJsonArray("items")
-                    : null;
+            JsonArray items = json.has("items") ? json.getAsJsonArray("items") : null;
             if (items == null || items.isEmpty()) {
                 return "⚠️ No results found for \"" + query + "\".";
             }
@@ -101,17 +103,26 @@ public class Google {
                 result.append("🔸 Title      : ").append(title).append("\n")
                         .append("🔗 Link       : ").append(link).append("\n")
                         .append("📝 Description: ").append(snippet).append("\n");
+
                 if (thumbnail != null) {
                     result.append("🖼️ Thumbnail  : ").append(thumbnail).append("\n");
                 }
+
                 result.append("---------------------------------------\n");
             }
+
             return result.toString();
 
         } catch (IOException e) {
             return "💥 Network error: " + e.getMessage();
         } catch (Exception e) {
-            return "⚠️ Unexpected parsing error: " + e.getMessage();
+            return "⚠️ Unexpected error: " + e.getMessage();
         }
     }
+
+    // ✅ Optional test main
+//    public static void main(String[] args) {
+//        Google g = new Google("Me_2");
+//        System.out.println(g.google("genshin character skirk data set"));
+//    }
 }
