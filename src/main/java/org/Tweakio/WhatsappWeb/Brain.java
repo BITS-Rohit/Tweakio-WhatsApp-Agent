@@ -8,29 +8,29 @@ import com.microsoft.playwright.options.WaitForSelectorState;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.Tweakio.AI.Characters.TypesAI;
+import org.Tweakio.AI.Chats.AgentAI;
 import org.Tweakio.AI.Chats.Gemini;
 import org.Tweakio.AI.Chats.GroqAI;
 import org.Tweakio.AI.ImageAIs.Dall_E_3;
-import org.Tweakio.WhatsappWeb.BrowserManager.Browser;
 import org.Tweakio.GithubAutomation.GithubAutoCommitScript;
+import org.Tweakio.Manual.Manual;
 import org.Tweakio.SearchSites.Amazon.India.SearchAmazonIN;
 import org.Tweakio.SearchSites.Google.Google;
 import org.Tweakio.SearchSites.Youtube.YoutubeAPI;
+import org.Tweakio.UserSettings.ConfigStore;
 import org.Tweakio.UserSettings.user;
+import org.Tweakio.WhatsappWeb.BrowserManager.Browser;
 import org.Tweakio.WhatsappWeb.MediaHandler.SendMedia;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public class MessH_Modified {
+public class Brain {
 
     public static class RestartException extends RuntimeException { // Need for the restart
         public RestartException() {
@@ -39,7 +39,7 @@ public class MessH_Modified {
     }
 
     //--------------- Selectors Area ----------------------------
-    static final String Chatlist = "div[aria-label='Chat list'][role='grid']";
+    static final String Chatlist = "div[role='grid']";
     static final String Chatitems = "div[role='listitem']";
     static final String Messages = "div[data-id] div.copyable-text[data-pre-plain-text] span.selectable-text";
     //-----------------------------------
@@ -51,19 +51,20 @@ public class MessH_Modified {
     public final Page page;
     private final String AdminNumber;
     private final String BotNumber;
-    String Quantifier = user.Quantifier;
+    String Quantifier = user.QUANTIFIER;
     static String NLP = "/say";
     public static final boolean debugMode = true;
     private boolean isGlobalCheck = false;
     private boolean loginAnnounced = false;
     private boolean pause = false;
-    private final String imgurl = "https://i.ibb.co/SXczdRD6/Skirk-Ullimate.jpg";
+
 
     public final Map<String, Set<String>> processedIds;
     public Map<String, Path> dp_img = new HashMap<>();
 
     // Constructors --------------------------------------------->>>>>>>>>>>>>
     GroqAI groqAI = new GroqAI();
+    AgentAI gpt = new AgentAI();
     YoutubeAPI youtubeAPI = new YoutubeAPI();
     Google google = new Google();
     Gemini gemini = new Gemini();
@@ -71,6 +72,7 @@ public class MessH_Modified {
     UnreadHandler unread = new UnreadHandler();
     Extras extras = new Extras();
     MenuBar menu = new MenuBar();
+    TypesAI typeai = new TypesAI();
     ReplyHandle replyHandle;
     SearchAmazonIN amazonIN;
     SendMedia sendMedia;
@@ -78,9 +80,9 @@ public class MessH_Modified {
     Browser browser; // Global Browser now
 
     //------------------ Main Code Starts from here
-    public MessH_Modified(WebLogin webStart, Map<String, Set<String>> initialState, Browser browser) {
+    public Brain(WebLogin webStart, Map<String, Set<String>> initialState, Browser browser) {
 
-        this.BotNumber =user.botNumber;
+        this.BotNumber = user.BOT_NUMBER;
         amazonIN = new SearchAmazonIN(browser);
         this.browser = browser;
         this.page = webStart.getPage();
@@ -95,7 +97,7 @@ public class MessH_Modified {
     }
 
     public static Set<String> banlist = new HashSet<>();
-    public static Map<String , String > Throttling = new HashMap<>();
+    public static Map<String, String> Throttling = new HashMap<>();
 
     public void MessageToOwner(long time) {
         try {
@@ -110,17 +112,18 @@ public class MessH_Modified {
             if (isLoaded && !loginAnnounced) {
                 String BootTime = Extras.bootime(time);
                 String message = "System Boot Time : " + BootTime + " sec" + "\n";
-                extras.sendMessageToChat(page, BotNumber, message + "✅ Logged in...");
-                loginAnnounced = true;
+                if (extras.sendMessageToChat(page, AdminNumber, message + "✅ Logged in...")) loginAnnounced = true;
             } else if (!isLoaded && debugMode) {
                 System.out.println("⚠️ WhatsApp not fully loaded.");
                 loginAnnounced = false;
             }
         } catch (RestartException re) {
+            Extras.logwriter("Throw re // messageto owner// Brain");
             throw re;
         } catch (Exception e) {
             extras.sleep(300000);
             if (debugMode) System.out.println("Error💀 : " + e.getMessage());
+            Extras.logwriter("Error // Brain // messageto owner " + e.getMessage());
             // In case of any exception, assume “not loaded”
             loginAnnounced = false;
         }
@@ -134,15 +137,15 @@ public class MessH_Modified {
         try {
             // Wait up to 10 seconds for the "Continue" button to appear
             Locator continueBtn = page.getByText("Continue");
-            continueBtn.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE).setTimeout(10_000));
+            continueBtn.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE).setTimeout(5_000));
             continueBtn.hover();
             continueBtn.click();
             System.out.println("✅ Popup “Continue” button clicked.");
         } catch (PlaywrightException e) {
             if (debugMode) System.out.println("⚠-----> No “Continue” popup found : ");
+            Extras.logwriter(" No continue popup Found. // Brain// popupRemove ");
         }
     }
-
 
 
     public void Handler() {
@@ -154,17 +157,26 @@ public class MessH_Modified {
                 return;
             }
             int i = 1;
+            long j = System.currentTimeMillis();
             while (true) {
+                if (Math.abs(System.currentTimeMillis() - j) / 1000 > 10 + new Random().nextInt(5)) {
+                    System.out.println("Throttle check started ");
+                    ThrottleHandler.OldChatsMark(Throttling, page, unread, extras);
+                    j = System.currentTimeMillis();
+                    System.out.println("Throttle check finished ");
+                }
                 System.out.println("\n 🌎New Chat Check==================>>>>>>>>>>>>>>> " + i);
                 EveryChatCheck(chatlist);
                 i++;
                 // todo prcoess downlodable queues here  // after every cycle
             }
         } catch (RestartException e) {
+            Extras.logwriter("Error : Throw re // Brain// Handler");
             throw e;
         } catch (Exception e) {
             if ("User requested restart".equals(e.getMessage())) throw e;
             System.out.println("Error💀💀 : " + e.getMessage());
+            Extras.logwriter("Error // Brain// Handler" + e.getMessage());
         }
     }
 
@@ -192,9 +204,11 @@ public class MessH_Modified {
             }
 
         } catch (RestartException re) {
+            Extras.logwriter("Throw re // Brain// EveryChatCheck");
             throw re;
         } catch (Exception e) {
             if (debugMode) System.out.println("Error 💀💀 : " + e.getMessage());
+            Extras.logwriter("Error -> // Brain// EveryChatCheck : " + e.getMessage());
         }
     }
 
@@ -208,7 +222,7 @@ public class MessH_Modified {
             System.out.println("==> Chat Name : " + name);
 
             // Ban------------------
-            if(banlist.contains(name)) {
+            if (banlist.contains(name)) {
                 System.out.println("[Banned Chat] ");
                 return;
             }
@@ -275,6 +289,7 @@ public class MessH_Modified {
                     continue;
                 }
 
+
                 // --- authenticate // Later will add here for the Admin Access Commands Only
                 System.out.println("Nid : " + N_ID);
                 String[] idParts = N_ID.split("#");
@@ -320,24 +335,38 @@ public class MessH_Modified {
                 //===============================
 
                 // xxxxxxxxxxxxxxxxxxxxxx  Head Commands xxxxxxxxxxxxxxxxxxxxxx
-                if (parts[0].equalsIgnoreCase("showq")) {
-                    ShowQuantifier(chat.elementHandle(), msg.elementHandle(), ReachTime, senderNumber);
-                    continue;
-                } else if (parts[0].equalsIgnoreCase("pause_on") && P_Auth) {
-                    pause = true;
-                    replyHandle.replyToChat(chat.elementHandle(), msg.elementHandle(), "Paused !!!", ReachTime, senderNumber, cmdTime);
-                    continue;
-                } else if (parts[0].equalsIgnoreCase("pause_off") && P_Auth) {
-                    pause = false;
-                    replyHandle.replyToChat(chat.elementHandle(), msg.elementHandle(), "Pause Off !!!", ReachTime, senderNumber, cmdTime);
-                    continue;
-                } else if (parts[0].equalsIgnoreCase("pause_show") && P_Auth) {
-                    replyHandle.replyToChat(chat.elementHandle(), msg.elementHandle(), "_Current Status Of Pause_ : " + (pause ? "On " : "Off"), ReachTime, senderNumber, cmdTime);
-                    continue;
-                } else if (parts[0].equalsIgnoreCase("...help")) {
-                    ShowMenu(chat.elementHandle(), msg.elementHandle(), ReachTime, senderNumber);
-                    continue;
+                String cmd = parts[0].toLowerCase();
+
+                switch (cmd) {
+                    case "showq" -> ShowQuantifier(chat.elementHandle(), msg.elementHandle(), ReachTime, senderNumber);
+                    case "pause_on" -> {
+                        if (P_Auth) {
+                            pause = true;
+                            replyHandle.replyToChat(chat.elementHandle(), msg.elementHandle(),
+                                    "Paused !!!", ReachTime, senderNumber, cmdTime);
+                        }
+                    }
+                    case "pause_off" -> {
+                        if (P_Auth) {
+                            pause = false;
+                            replyHandle.replyToChat(chat.elementHandle(), msg.elementHandle(),
+                                    "Pause Off !!!", ReachTime, senderNumber, cmdTime);
+                        }
+                    }
+                    case "pause_show" -> {
+                        if (P_Auth) {
+                            String status = pause ? "On" : "Off";
+                            replyHandle.replyToChat(chat.elementHandle(), msg.elementHandle(),
+                                    "_Current Status Of Pause_: " + status,
+                                    ReachTime, senderNumber, cmdTime);
+                        }
+                    }
+                    case "...help" -> ShowMenu(chat.elementHandle(), msg.elementHandle(), ReachTime, senderNumber);
+                    default -> {
+                        // fall‑through to next logic or ignore unknown commands
+                    }
                 }
+
 
                 //xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
                 if (pause) {
@@ -348,20 +377,35 @@ public class MessH_Modified {
                 System.out.printf("→ Processing “%s” from %s at %d%n", text, name, curTime);
                 if (parts[0].equalsIgnoreCase(NLP)) {
                     // Convert From NLP to CLI
-                    text = gemini.ask(text, false,true);
+                    text = gemini.ask(text, false, true);
                     System.out.println("AI Formatted text : " + text);
                 }
                 queryformat(chat.elementHandle(), msg.elementHandle(), text, ReachTime, senderNumber);
             }
 
             // Before moving to next check Mark as Unread if processed anything
-            extras.sleep(1500);
-            unread.markAsUnread(page, chat);
+//            extras.sleep(1500);
+            if (!Throttling.containsKey(name)) {
+                Throttling.put(name, 15 + new Random().nextInt(4) + "#" + System.currentTimeMillis());
+                unread.markAsUnread(page, chat);
+            } else { // Means it is already in tbe throtle chats
+                String entry = Throttling.get(name);
+                if (hasThrottleExpired(entry)) {
+                    Throttling.remove(name);
+                    unread.markAsUnread(page, chat);
+                } else {
+                    // Todo log it
+                }
+
+            }
+
 
         } catch (RestartException re) {
+            Extras.logwriter("Throw re // checkchat // brain");
             throw re;
         } catch (Exception e) {
             System.out.println("Error 💀💀 : " + e.getMessage());
+            Extras.logwriter("Error // checkchat // brain " + e.getMessage());
         }
     }
 
@@ -382,9 +426,10 @@ public class MessH_Modified {
         fname = fname.toLowerCase().trim();
 
         if (fname.equals("showgc")) ShowGlobalMode(chat, target, time, sender);
-        else if(fname.equals("ban")) ban(extras.getChatName(chat));
-        else if(fname.equals("unban")) unban(extras.getChatName(chat));
+        else if (fname.equals("ban")) ban(extras.getChatName(chat));
+        else if (fname.equals("unban")) unban(extras.getChatName(chat));
         else if (fname.equals("s_restart")) SoftRestart(chat, target, time, sender);
+        else if (fname.equals("imglist")) handleImageList(chat, replyHandle, target, time, sender, cmdTime);
         else if (fname.equals("showmaxchat"))
             replyHandle.replyToChat(chat, target, ShowMaxChat(), time, sender, cmdTime);
         else if (fname.equals("showq")) ShowQuantifier(chat, target, time, sender);
@@ -441,10 +486,14 @@ public class MessH_Modified {
                     break;
 
                 case "personalai":
-                    String ans3 = gemini.ask(query, true,true);
+                    String ans3 = gemini.ask(query, true, true);
                     replyHandle.replyToChat(chat, target, ans3, time, sender, cmdTime);
                     break;
 
+                case "gpt":
+                    String ans4 = gpt.sendToAgent(query);
+                    replyHandle.replyToChat(chat, target, ans4, time, sender, cmdTime);
+                    break;
 
                 case "setgc":
                     setGlobalMode(chat, target, query, time, sender);
@@ -454,8 +503,38 @@ public class MessH_Modified {
                     SetQuantifier(chat, target, query, time, sender);
                     break;
 
+                case "manual":
+                    String desp = new Manual().ManualHandler(query);
+                    replyHandle.replyToChat(chat, target, desp, time, sender, cmdTime);
+                    break;
+
+                case "setimg":
+                    handleImageSetting(query, replyHandle, chat, target, time, sender, cmdTime);
+                    break;
+
+                case "addimg":
+                    ConfigStore.addIntroImage(query);
+                    replyHandle.replyToChat(chat, target, "Added Image Successfully ", time, sender, cmdTime);
+                    break;
+
                 case "amazon_s":
                     replyHandle.replyToChat(chat, target, amazonIN.GetContent(query), time, sender, cmdTime);
+                    break;
+
+                case "love", "romantic" , "romance":
+                    String al = typeai.askType("love",query+"Sender : "+sender);
+                    replyHandle.replyToChat(chat, target, al, time, sender, cmdTime);
+                    break;
+
+                case"emo" , "emotional", "therapist":
+                    String el = typeai.askType("therapist",query);
+                    replyHandle.replyToChat(chat, target, el, time, sender, cmdTime);
+                    break;
+
+                case "shraddha" , "shradha", "sh" :
+                    String  qq = "[Sender- %s : %s] : %s".formatted(Extras.realtime() ,sender, query) ;
+                    String sl =  typeai.askType("shraddha",qq);
+                    replyHandle.replyToChat(chat, target, sl, time, sender, cmdTime);
                     break;
 
                 default:
@@ -464,6 +543,7 @@ public class MessH_Modified {
             }
         } else {
             // query is empty
+            System.out.println("Empty Section -----");
             String ll = groqAI.chat(s);
             replyHandle.replyToChat(chat, target, ll, time, sender, cmdTime);
         }
@@ -474,21 +554,17 @@ public class MessH_Modified {
 
     //----
     public void ShowMenu(ElementHandle chat, ElementHandle target, String t, String s) {
-        String MenuMessage = menu.menu(chat, target, t, s, BotNumber);
+        String MenuMessage = menu.Menu();
 
-        sendMedia.SendFile(chat, target, MenuMessage, t, s, cmdTime, "image", dallE3.downloadImageFromInput(imgurl + "##intro").toString(), page);
+        sendMedia.SendFile(chat, target, MenuMessage, t, s, cmdTime, "image", dallE3.downloadImageFromInput(user.INTRO_IMG_URL + "##intro").toString(), page);
 
     }
 
     // ----
     public void HardRestart(ElementHandle chat, ElementHandle message, String reply, String time, String sender, long cmdTime) {
-        try {
-            replyHandle.replyToChat(chat, message, reply, time, sender, cmdTime);
-            extras.sleep(1000); // For Messages to send
-            BotReloader.hardRestart();
-        } catch (IOException e) {
-            System.err.println("Error 💀💀 : " + e.getMessage());
-        }
+        replyHandle.replyToChat(chat, message, reply, time, sender, cmdTime);
+        extras.sleep(1000); // For Messages to send
+        Reloader.hardRestart();
     }
 
     public void SetQuantifier(ElementHandle chat, ElementHandle target, String quantifier, String T, String s) {
@@ -578,6 +654,7 @@ public class MessH_Modified {
                     infoItem.waitFor(new Locator.WaitForOptions().setTimeout(2_000));
                 } catch (PlaywrightException e2) {
                     System.out.println("❌ Couldn't find 'Contact info' or 'Group info'.");
+                    Extras.logwriter("Couldn't find 'Contact info' or 'Group info'. // getdp // brain");
                     return false;
                 }
             }
@@ -624,17 +701,68 @@ public class MessH_Modified {
 
         } catch (Exception e) {
             System.out.println("⚠ Error in getdp: " + e.getMessage());
+            Extras.logwriter("Error in getdp // brain: " + e.getMessage());
             return false;
         }
     }
-    void ban(String name){
+
+    void ban(String name) {
         banlist.add(name);
     }
-    void unban(String name){
+
+    void unban(String name) {
         banlist.remove(name);
     }
-    public static int millisToSeconds(long millis) {
-        return Math.toIntExact(millis / 1000);
+
+    /**
+     * Returns true if the throttle duration has passed since startTime.
+     *
+     * @param throttleEntry A String in the form "durationInSec#startTimestampMillis"
+     * @return true if now ≥ startTimestamp + durationInSec*1000
+     */
+    public static boolean hasThrottleExpired(String throttleEntry) {
+        String[] parts = throttleEntry.split("#");
+        int durationSeconds = Integer.parseInt(parts[0]);
+        long startMillis = Long.parseLong(parts[1]);
+        long elapsedMillis = System.currentTimeMillis() - startMillis;
+        return elapsedMillis >= durationSeconds * 1000L;
+    }
+
+    public void handleImageSetting(String query, ReplyHandle replyHandle, ElementHandle chat, ElementHandle target, String time, String sender, long cmdTime) {
+        boolean isNumber = false;
+
+        try {
+            isNumber = Integer.parseInt(query) > 0;
+        } catch (Exception ignored) {
+        }
+
+        if (isNumber) {
+            int idx = Integer.parseInt(query);
+            if (idx < ConfigStore.getIntroImageList().size()) {
+                ConfigStore.setIntroImageByIndex(idx);
+                replyHandle.replyToChat(chat, target, "`✅ Image set successfully.`", time, sender, cmdTime);
+            } else {
+                replyHandle.replyToChat(chat, target, "`❌ Invalid index.`", time, sender, cmdTime);
+            }
+        } else {
+            ConfigStore.setIntroImageUrl(query);
+            replyHandle.replyToChat(chat, target, "`✅ Image set successfully.`", time, sender, cmdTime);
+        }
+    }
+
+    public void handleImageList(ElementHandle chat, ReplyHandle replyHandle, ElementHandle target, String time, String sender, long cmdTime) {
+        List<String> imageList = ConfigStore.getIntroImageList();
+        if (imageList.isEmpty()) {
+            replyHandle.replyToChat(chat, target, "⚠️ No intro images available.", time, sender, cmdTime);
+            return;
+        }
+
+        StringBuilder formatted = new StringBuilder("🖼️ *Intro Image List:*\n\n");
+        for (int i = 0; i < imageList.size(); i++) {
+            formatted.append(i).append(". ").append(imageList.get(i)).append("\n");
+        }
+
+        replyHandle.replyToChat(chat, target, formatted.toString(), time, sender, cmdTime);
     }
 }
 

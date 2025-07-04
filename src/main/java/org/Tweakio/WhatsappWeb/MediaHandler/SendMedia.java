@@ -11,7 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static org.Tweakio.WhatsappWeb.MessH_Modified.debugMode;
+import static org.Tweakio.WhatsappWeb.Brain.debugMode;
 
 public class SendMedia {
     ReplyHandle replyHandle;
@@ -99,6 +99,7 @@ public class SendMedia {
 
         } catch (Exception e) {
             if (debugMode) System.err.println("❌ Error in SendFile: " + e.getMessage());
+            Extras.logwriter("Error in sending file // Sendmedia : " + e.getMessage());
             replyHandle.replyToChat(chat, message, reply, time, sender, cmdTime);
         }
     }

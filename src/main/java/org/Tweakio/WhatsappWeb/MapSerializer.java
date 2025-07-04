@@ -20,6 +20,7 @@ public class MapSerializer {
             System.out.println("✅ Map serialized to file.");
         } catch (IOException e) {
             System.err.println("❌ Error during serialization: " + e.getMessage());
+            Extras.logwriter("Error during serialization //mapserialzier // serialize : " + e.getMessage());
         }
     }
 
@@ -36,10 +37,12 @@ public class MapSerializer {
             }
             else {
                 System.err.println("❌ Deserialized object is not a Map.");
+                Extras.logwriter("Error ---> Deserialized object is not a Map. //mapserialzier // deserialize ");
                 return new HashMap<>();
             }
         } catch (IOException | ClassNotFoundException e) {
             System.err.println("❌ Error during deserialization: " + e.getMessage());
+            Extras.logwriter("Error during deserialization // mapserailzer // deserilaize : " + e.getMessage());
             return new HashMap<>();
         }
     }

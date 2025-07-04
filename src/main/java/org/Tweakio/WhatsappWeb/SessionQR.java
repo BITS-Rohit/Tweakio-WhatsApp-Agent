@@ -15,21 +15,25 @@ import java.nio.file.Path;
 
 public class SessionQR {
     void Qr(File path ) throws IOException, NotFoundException, WriterException {
-        BufferedImage original = ImageIO.read(path);
-        LuminanceSource src = new BufferedImageLuminanceSource(original);
-        BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(src));
-        Result result = new MultiFormatReader().decode(bitmap);
-        String payload = result.getText();
-        System.out.println("Decoded payload: " + payload);
+        try {
+            BufferedImage original = ImageIO.read(path);
+            LuminanceSource src = new BufferedImageLuminanceSource(original);
+            BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(src));
+            Result result = new MultiFormatReader().decode(bitmap);
+            String payload = result.getText();
+            System.out.println("Decoded payload: " + payload);
 
-        // 2) Re‑encode exactly the same payload into a new QR
-        int size = 300; // pixels
-        QRCodeWriter writer = new QRCodeWriter();
-        BitMatrix matrix = writer.encode(payload, BarcodeFormat.QR_CODE, size, size);
+            // 2) Re‑encode exactly the same payload into a new QR
+            int size = 300; // pixels
+            QRCodeWriter writer = new QRCodeWriter();
+            BitMatrix matrix = writer.encode(payload, BarcodeFormat.QR_CODE, size, size);
 
-        Path outPath = Path.of("wrapped_qr.png");
-        MatrixToImageWriter.writeToPath(matrix, "PNG", outPath);
-        System.out.println("New QR written to " + outPath.toAbsolutePath());
+            Path outPath = Path.of("wrapped_qr.png");
+            MatrixToImageWriter.writeToPath(matrix, "PNG", outPath);
+            System.out.println("New QR written to " + outPath.toAbsolutePath());
+        }catch (Exception e) {
+            Extras.logwriter("QR could not be decoded // Session Qr : " + e.getMessage());
+        }
     }
 }
 

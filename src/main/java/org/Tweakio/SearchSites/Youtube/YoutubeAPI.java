@@ -7,6 +7,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.Tweakio.UserSettings.user;
+import org.Tweakio.WhatsappWeb.Extras;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -34,7 +35,7 @@ public class YoutubeAPI {
 
     public YoutubeAPI( ){
         BaseURL = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=";
-        key = user.youtubeapikey; // Consider externalizing this
+        key = user.YOUTUBE_API_KEY; // Consider externalizing this
         client = new OkHttpClient();
     }
 
@@ -69,6 +70,7 @@ public class YoutubeAPI {
                 String msg = err.has("message")
                         ? err.get("message").getAsString()
                         : "Unknown error";
+                Extras.logwriter("Youtube api error //search : " + msg);
                 return "⚠️ YouTube API error: " + msg;
             }
 
@@ -76,6 +78,7 @@ public class YoutubeAPI {
             JsonArray results = json.getAsJsonArray("items");
 
             if (results == null || results.isEmpty()) {
+                Extras.logwriter("No results // seach / youtube for : "+query);
                 return "⚠️ No results found for \"" + query + "\".";
             }
 
@@ -92,6 +95,7 @@ public class YoutubeAPI {
             }
             if (videoIds.isEmpty()) {
                 System.out.println(response);
+                Extras.logwriter("No videos found // youtube  //search : " + query);
                 return "⚠️ No videos found in search results.";
             }
             videoIds.setLength(videoIds.length() - 1);
@@ -100,8 +104,10 @@ public class YoutubeAPI {
             return fetchVideoDetails(videoIds.toString(), results);
 
         } catch (IOException e) {
+            Extras.logwriter("Network error //search //youtube : " + e.getMessage());
             return "⚠️ Network error: " + e.getMessage();
         } catch (Exception e) {
+            Extras.logwriter("Error in Youtube API //search : " + e.getMessage());
             return "⚠️ Unexpected parsing error: " + e.getMessage();
         }
     }
@@ -165,6 +171,7 @@ public class YoutubeAPI {
         } else if (thumbnails.has("default")) {
             return thumbnails.getAsJsonObject("default").get("url").getAsString();
         }
+        Extras.logwriter("Thumbnail URL not found //youtube ");
         return "No thumbnail available.";
     }
 
@@ -194,6 +201,7 @@ public class YoutubeAPI {
         File saveDir = Paths.get(System.getProperty("user.dir"), "src", "main", "java", "org", "Tweakio", "FilesSaved").toFile();
         if (!saveDir.exists() && !saveDir.mkdirs()) {
             System.out.println("❌ Failed to create directory: " + saveDir.getAbsolutePath());
+            Extras.logwriter("Failed to create directory //youtube : " + saveDir.getAbsolutePath());
             return false;
         }
 
@@ -260,15 +268,19 @@ public class YoutubeAPI {
                     return true;
                 } else {
                     System.err.println("❌ Download reported success, but file not found: " + finalFileName);
+                    Extras.logwriter("Download reported success, but file not found //youtube: " + finalFileName);
                 }
             } else {
                 System.out.println("🔻🔻 Nope, Not this time. Downloading Error");
+                Extras.logwriter("Downloading Error //youtube ");
             }
 
         } catch (IOException e) {
             System.out.println("❌ Reader Error: " + e.getMessage());
+            Extras.logwriter("Reader Error //youtube: " + e.getMessage());
         } catch (InterruptedException e) {
             System.out.println("❌ Interrupted: " + e.getMessage());
+            Extras.logwriter("Interrupted //youtube: " + e.getMessage());
             Thread.currentThread().interrupt();
         }
 
@@ -303,6 +315,7 @@ public class YoutubeAPI {
                         results.add(obj);
                     } catch (Exception e) {
                         System.out.println("⚠️ Invalid JSON line skipped: " + line);
+                        Extras.logwriter("Invalid JSON line skipped //youtube : " + line);
                     }
                 } else {
                     System.out.println("ℹ️ Non-JSON Output: " + line);
@@ -312,6 +325,7 @@ public class YoutubeAPI {
             int exitCode = process.waitFor();
             if (exitCode != 0) {
                 System.out.println("❌ yt-dlp command failed.");
+                Extras.logwriter("yt-dlp command failed //youtube  ");
                 return;
             }
 
@@ -328,8 +342,10 @@ public class YoutubeAPI {
 
         } catch (IOException e) {
             System.out.println("❌ Error executing yt-dlp: " + e.getMessage());
+            Extras.logwriter("Error executing yt-dlp: " + e.getMessage());
         } catch (InterruptedException e) {
             System.out.println("⚠️ Interrupted: " + e.getMessage());
+            Extras.logwriter("Interrupted executing yt-dlp: " + e.getMessage());
             Thread.currentThread().interrupt();
         }
     }

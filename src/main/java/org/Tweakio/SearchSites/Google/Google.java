@@ -8,6 +8,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.Tweakio.UserSettings.user;
+import org.Tweakio.WhatsappWeb.Extras;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -24,8 +25,8 @@ public class Google {
     private final Gson gson;
 
     public Google() {
-        this.API_KEY = user.googleapikey;
-        this.CSE_ID = user.CSEID;
+        this.API_KEY = user.GOOGLE_API_KEY;
+        this.CSE_ID = user.CSE_ID;
         this.client = new OkHttpClient();
         this.gson = new Gson();
     }
@@ -45,6 +46,7 @@ public class Google {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful() || response.body() == null) {
+                Extras.logwriter("Google API http error //google "+response.code());
                 return "⚠️ Google API HTTP " + response.code();
             }
 
@@ -53,6 +55,7 @@ public class Google {
             if (json.has("error")) {
                 JsonObject err = json.getAsJsonObject("error");
                 String msg = err.has("message") ? err.get("message").getAsString() : "Unknown error";
+                Extras.logwriter("Google API  error //google "+msg);
                 return "⚠️ Google API error: " + msg;
             }
 
@@ -60,11 +63,13 @@ public class Google {
                     ? json.getAsJsonObject("searchInformation")
                     : null;
             if (searchInfo == null) {
+                Extras.logwriter("No Search information found in Google API ");
                 return "⚠️ No search information available.";
             }
 
             JsonArray items = json.has("items") ? json.getAsJsonArray("items") : null;
             if (items == null || items.isEmpty()) {
+                Extras.logwriter("No results found for "+query+" in Google API");
                 return "⚠️ No results found for \"" + query + "\".";
             }
 
@@ -114,8 +119,10 @@ public class Google {
             return result.toString();
 
         } catch (IOException e) {
+            Extras.logwriter("Network error //google : "+e.getMessage());
             return "💥 Network error: " + e.getMessage();
         } catch (Exception e) {
+            Extras.logwriter("Error in google : "+e.getMessage());
             return "⚠️ Unexpected error: " + e.getMessage();
         }
     }

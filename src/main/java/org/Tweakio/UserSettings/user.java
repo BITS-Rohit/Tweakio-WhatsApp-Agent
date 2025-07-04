@@ -1,32 +1,42 @@
 package org.Tweakio.UserSettings;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 public final class user {
-    public user() { /* prevent instantiation */ }
+    private static final String profileName = System.getenv("PROFILE") != null
+            ? System.getenv("PROFILE")
+            : "dev";
 
-    // Your bot identity
-    public static final String botName       = ""; // e.g. "[YourName]"
-    public static final String botNumber     = ""; // e.g. "Country code + your number"
-    public static final String adminNumber   = ""; // e.g. "0987654321"
-    public static final String adminName     = ""; // e.g. "[AdminName]"
+    private static final Dotenv dotenv = Dotenv.configure()
+            .filename(profileName + ".env")
+            .directory("ENV")
+            .load();
 
-    // GitHub credentials
-    public static final String Gh_Token      = ""; // e.g. "ghp_XXXXXXXXXXXXXXXXXXXX"
-    public static final String reponame      = ""; // e.g. "https://github.com/youruser/yourrepo.git"
-    public static final String branchName    = ""; // e.g. "main"
+    public static final String PROFILE         = dotenv.get("PROFILE");
+    public static final String BOT_NAME        = dotenv.get("BOT_NAME");
+    public static final String BOT_NUMBER      = dotenv.get("BOT_NUMBER");
+    public static final String ADMIN_NUMBER    = dotenv.get("ADMIN_NUMBER");
+    public static final String ADMIN_NAME      = dotenv.get("ADMIN_NAME");
 
-    // API keys
-    public static final String youtubeapikey = ""; // e.g. "AIzaSyXXXXXXXXXXXXX"
-    public static final String googleapikey  = ""; // e.g. "AIzaSyXXXXXXXXXXXXX"
-    public static final String groqapikey    = ""; // e.g. "gsk_XXXXXXXXXXXXXXXX"
-    public static final String geminiApiKey  = ""; // e.g. "AIzaSyXXXXXXXXXXXXX"
+    public static final String GH_TOKEN        = dotenv.get("GH_TOKEN");
+    public static final String REPO_NAME       = dotenv.get("REPO_NAME");
+    public static final String BRANCH_NAME     = dotenv.get("BRANCH_NAME");
 
-    // Custom Search Engine ID
-    public static final String CSEID         = ""; // e.g. "0123456789abcdef0"
+    public static final String YOUTUBE_API_KEY = dotenv.get("YOUTUBE_API_KEY");
+    public static final String GOOGLE_API_KEY  = dotenv.get("GOOGLE_API_KEY");
+    public static final String GROQ_API_KEY    = dotenv.get("GROQ_API_KEY");
+    public static final String GEMINI_API_KEY  = dotenv.get("GEMINI_API_KEY");
 
-    // Agent.ai integration
-    public static final String AgentAIKey    = ""; // e.g. "https://api.agent.ai/v1/agent/XXX/webhook/YYY"
-    public static final String Quantifier    = ""; // e.g. "//"
-    public static final String AgentID       = ""; // e.g. "abcdef123456"
-    public static final String webhook       = ""; // e.g. "webhook-id-1234"
-    public static final String base          = ""; // e.g. "https://api.agent.ai/v1/agent/"
+    public static final String CSE_ID          = dotenv.get("CSE_ID");
+
+    public static final String AGENT_AI_KEY    = dotenv.get("AGENT_AI_KEY");
+    public static final String QUANTIFIER      = dotenv.get("QUANTIFIER");
+    public static final String AGENT_ID        = dotenv.get("AGENT_ID");
+    public static final String WEBHOOK_ID      = dotenv.get("WEBHOOK_ID");
+    public static final String BASE_URL        = dotenv.get("BASE_URL");
+    public static final String INTRO_IMG_URL   = dotenv.get("INTRO_IMG_URL");
+
+    private user() {
+        // prevent instantiation
+    }
 }

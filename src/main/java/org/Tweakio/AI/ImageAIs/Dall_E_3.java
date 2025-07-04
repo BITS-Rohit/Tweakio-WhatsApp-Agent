@@ -2,6 +2,7 @@ package org.Tweakio.AI.ImageAIs;
 
 import okhttp3.*;
 import org.Tweakio.UserSettings.user;
+import org.Tweakio.WhatsappWeb.Extras;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -20,9 +21,10 @@ public class Dall_E_3 {
      * Strips any HTML wrapper.
      */
     public String get_Pic_Url_With_Prompt(String prompt) {
-        final String agentId   = user.AgentID;
-        final String webhookId = user.webhook;
-        final String base      = user.base + agentId + "/webhook/" + webhookId;
+        final String agentId   = user.AGENT_ID;
+        final String webhookId = user.WEBHOOK_ID;
+        final String base      = user.BASE_URL + agentId + "/webhook/" + webhookId;
+        System.out.println(base+"/async/");
 
         try {
             // 1) Start run
@@ -40,12 +42,14 @@ public class Dall_E_3 {
             try (Response r = client.newCall(startReq).execute()) {
                 if (!r.isSuccessful() || r.body() == null) {
                     System.err.println("❌ Start run failed: HTTP " + r.code());
+                    Extras.logwriter("Start run failed //dall E : HTTP " + r.code());
                     return null;
                 }
                 JSONObject js = new JSONObject(r.body().string());
                 runId = js.optString("run_id", "");
                 if (runId.isEmpty()) {
                     System.err.println("❌ Empty run_id");
+                    Extras.logwriter("Empty run_id // Dall E");
                     return null;
                 }
             }
@@ -68,14 +72,18 @@ public class Dall_E_3 {
                         return extractSrc(raw);
                     }
                     System.err.println("❌ Polling error: HTTP " + code);
+                    Extras.logwriter("Polling error //dall E : HTTP " + code);
                     return null;
                 }
             }
         } catch (IOException e) {
             System.err.println("❌ I/O error: " + e.getMessage());
+            Extras.logwriter("I/O error // Dall E: " + e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             System.err.println("❌ Interrupted: " + e.getMessage());
+            Extras.logwriter("Interrupted executing  // Dall E: " + e.getMessage());
+
         }
         return null;
     }
@@ -84,11 +92,9 @@ public class Dall_E_3 {
      * If input is an <img> tag, extracts the src URL; otherwise returns input as-is.
      */
     private String extractSrc(String htmlOrUrl) {
-        // quick check: starts with "<img"
         if (!htmlOrUrl.trim().toLowerCase().startsWith("<img")) {
             return htmlOrUrl;
         }
-        // regex to grab src="…"
         Pattern p = Pattern.compile("src\\s*=\\s*\"([^\"]+)\"");
         Matcher m = p.matcher(htmlOrUrl);
         if (m.find()) {
@@ -105,6 +111,7 @@ public class Dall_E_3 {
     public Path downloadImageFromInput(String combined) {
         if (combined == null || !combined.contains("##")) {
             System.err.println("❌ Input must be '<url>##<filename>'");
+            Extras.logwriter("Input must be '<url>##<filename>'");
             return null;
         }
         String[] parts = combined.split("##", 2);
@@ -113,6 +120,7 @@ public class Dall_E_3 {
 
         if (!imageUrl.startsWith("http")) {
             System.err.println("❌ Invalid URL: " + imageUrl);
+            Extras.logwriter("Invalid URL: " + imageUrl);
             return null;
         }
 
@@ -146,6 +154,7 @@ public class Dall_E_3 {
             return output;
         } catch (IOException e) {
             System.err.println("❌ I/O Error: " + e.getMessage());
+            Extras.logwriter("I/O Error //Dalle //downloadimagefrominput  : " + e.getMessage());
         }
         return null;
     }

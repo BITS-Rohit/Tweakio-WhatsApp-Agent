@@ -1,0 +1,27 @@
+name: Run Tweakio Agent
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 */5 * * *'
+
+jobs:
+  run-tweakio-agent:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+
+      - name: ☕ Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 🛠️ Build with Maven
+        run: mvn clean install
+
+      - name: 🚀 Run the Tweakio Agent
+        run: java -jar target/tweakio-agent.jar

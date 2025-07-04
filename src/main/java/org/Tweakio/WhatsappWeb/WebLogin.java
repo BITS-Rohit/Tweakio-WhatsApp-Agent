@@ -37,6 +37,7 @@ public class WebLogin {
     public boolean webLogin() {
         if (!page.url().equals(WEB_URL)) {
             page.navigate(WEB_URL);
+            Extras.logwriter("Web Login naviagtion // weblogin  : "+page.url());
         }
 
         try {
@@ -47,23 +48,29 @@ public class WebLogin {
             if (qr.isVisible()) {
                 System.out.println("📷 QR code detected.");
                 System.out.println("ℹ️ You may scan the QR OR enter login code on your phone.");
+                Extras.logwriter("Qr code detected. && waiting for sign in // weblogin  ");
             } else {
                 System.out.println("ℹ️ No QR code visible — waiting for login via other method.");
+                Extras.logwriter("No QR code visible <UNK> waiting for login via other method. // weblogin  ");
             }
 
             // Always wait for successful login regardless of method
             if (waitForLoginSuccess()) {
                 System.out.println("✅ Login successful.");
+                Extras.logwriter("Login successful. // weblogin  ");
                 return true;
             } else {
                 System.out.println("❌ Login failed or timeout.");
+                Extras.logwriter("Login failed. // weblogin  ");
                 return false;
             }
 
         } catch (PlaywrightException e) {
             System.out.println("❌ Login failed (Playwright exception): " + e.getMessage());
+            Extras.logwriter("Login failed (Playwright exception) // weblogin : " + e.getMessage());
         } catch (Exception e) {
             System.out.println("❌ Login failed (Exception): " + e.getMessage());
+            Extras.logwriter("Login failed (Exception) // weblogin : " + e.getMessage());
         }
 
         return false;
@@ -85,6 +92,7 @@ public class WebLogin {
             return true;
         } catch (PlaywrightException e) {
             System.out.println("❌ Login timeout or failed: " + e.getMessage());
+            Extras.logwriter("Login timeout or failed // weblogin //waitforloginsuccess : " + e.getMessage());
         }
         return false;
     }
@@ -110,6 +118,7 @@ public class WebLogin {
             }
         } catch (Exception e) {
             System.out.println("⚠️ Error checking broken session: " + e.getMessage());
+            Extras.logwriter("Error checking broken session //weblogin // deleltebrokensession : " + e.getMessage());
         }
     }
 
@@ -124,6 +133,7 @@ public class WebLogin {
                 deleteBrokenSession();
             }
             System.out.println("🛑 Session monitor stopped.");
+            Extras.logwriter("Session monitor stopped. // weblogin  // startsessionmonitor");
         }, "SessionMonitor").start();
     }
 

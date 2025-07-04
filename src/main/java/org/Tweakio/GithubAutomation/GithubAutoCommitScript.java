@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import okhttp3.*;
 import org.Tweakio.UserSettings.user;
+import org.Tweakio.WhatsappWeb.Extras;
 
 import java.io.IOException;
 import java.net.URI;
@@ -24,9 +25,9 @@ public class GithubAutoCommitScript {
     private static final boolean debug = true;
 
     public GithubAutoCommitScript(){
-        this.GITHUB_TOKEN = user.Gh_Token;
-        this.repoUrl = user.reponame;
-        this.branchname = user.branchName;
+        this.GITHUB_TOKEN = user.GH_TOKEN;
+        this.repoUrl = user.REPO_NAME;
+        this.branchname = user.BRANCH_NAME;
     }
 
     public String commit() {
@@ -41,6 +42,7 @@ public class GithubAutoCommitScript {
             return "Parsed repo -> Owner: " + info.owner + ", Repo: " + info.repo + ", Branch: " + info.branch + ", Path: " + info.path + "\n"
                     + run(info, info.path.isEmpty() ? "daily-update.txt" : info.path);
         } catch (IOException | IllegalArgumentException e) {
+            Extras.logwriter("failed commit // github // commit");
             return "❌ Failed: " + e.getMessage();
         }
     }
@@ -71,6 +73,7 @@ public class GithubAutoCommitScript {
                 return "✅ Commit successful: " + response.code() + "\n" + "Url : " + repoUrl;
             } else {
                 assert response.body() != null;
+                Extras.logwriter("Commit failed// github  Http: " + response.code() + "\n" + response.body().string());
                 return "❌ Commit failed: HTTP " + response.code() + " → " + response.body().string();
             }
         }
@@ -91,6 +94,7 @@ public class GithubAutoCommitScript {
             } else {
                 System.err.println("⚠️ Unable to fetch SHA: HTTP " + response.code() +
                         " → " + (response.body() != null ? response.body().string() : "no body"));
+                Extras.logwriter("Unable to fetch SHA: HTTP " + response.code() + "\n" + response.body().string());
                 return null;
             }
         }
@@ -115,11 +119,13 @@ public class GithubAutoCommitScript {
                 URI uri = new URI(repoUrl);
                 String host = uri.getHost();
                 if (!"github.com".equalsIgnoreCase(host)) {
+                    Extras.logwriter("not a github url");
                     throw new IllegalArgumentException("Not a github.com URL");
                 }
 
                 String[] parts = uri.getPath().split("/");
                 if (parts.length < 3) {
+                    Extras.logwriter("url path too short : "+uri.getPath());
                     throw new IllegalArgumentException("URL path too short: " + uri.getPath());
                 }
 
@@ -139,6 +145,7 @@ public class GithubAutoCommitScript {
 
                 return new RepoInfo(owner, repo, branch, path);
             } catch (URISyntaxException e) {
+                Extras.logwriter("Invalid URL //gtihub : " + e.getMessage());
                 throw new IllegalArgumentException("Invalid URL syntax: " + repoUrl, e);
             }
         }

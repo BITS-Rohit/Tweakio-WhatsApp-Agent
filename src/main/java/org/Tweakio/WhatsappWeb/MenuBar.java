@@ -1,6 +1,5 @@
 package org.Tweakio.WhatsappWeb;
 
-import com.microsoft.playwright.ElementHandle;
 import org.Tweakio.UserSettings.user;
 
 public class MenuBar {
@@ -11,70 +10,65 @@ public class MenuBar {
     String AdminName = d.a_name;
     String AdminNumber = d.a_num;
 
-    public String menu(ElementHandle chat, ElementHandle target, String t, String s, String botNumber) {
-
+    public String Menu() {
         return """
-                🌟 *Welcome to Your Smart Assistant! Tweakio!!!* 🌟
-                _______________
-                Admin Name  : """ + AdminName + "\n" +
-                "Admin Number: " + AdminNumber + "\n \n" +
-                "Bot Owner  : " + user.botName + "\n" +
-                "Bot Number : " + botNumber + "\n" +
-
+        🌟 *Welcome to Your Smart Assistant — Tweakio!* 🌟
+        ───────────────────────────────────────
+        👑 Admin Name   :\s""" + AdminName + "\n" +
+                "📞 Admin Number : " + AdminNumber + "\n" +
+                "🤖 Bot Owner    : " + user.BOT_NAME + "\n" +
+                "📲 Bot Number   : " + user.BOT_NUMBER + "\n\n" +
                 """
-                        _______________
-                        _Your all-in-one intelligent companion!_
-                        
-                        ━━━━━━━━━━━━━━━━━━━━
-                        🧾 *How to Use Commands:*
-                        ➤ *Format:* `Quantifier ➜ Command ➜ Input`
-                        ➤ _Example:_ `// ai ➜ Who is Elon Musk?`
-                        
-                        ━━━━━━━━━━━━━━━━━━━━
-                        💬 *AI & Chat Tools*
-                        ┌─ 🧠 `ai ➜ your question`
-                        ├─ 👤 `personalai ➜ your private chat`
-                        └─ ❓ `help ➜ Show this menu again`
-                        
-                        🎨 *Image Tools (New!)*
-                        ┌─ 🖼️ `img_url ➜ <your image prompt>` → _Generate AI image + get shareable link_
-                        └─ 📥 `imgd ➜ <alias>` → _Download image by alias you gave to img_url_
-                        
-                        🔍 *Search & Download*
-                        ┌─ 🔎 `google ➜ your search query`
-                        ├─ 🎥 `yts ➜ search YouTube`
-                        └─ 📥 `ytd ➜ YouTube link to download`
-                        
-                        👨‍🎓 *Student & GitHub Tools*
-                        └─ 🔧 `github ➜ Perform daily commit to the linked repo`
-                        
-                        🛠️ *Group & Bot Management*
-                        ┌─ 📄 `showq ➜ Display current quantifier`
-                        ├─ ⏸️ `pause_on ➜ Pause the bot`
-                        ├─ 🔍 `pause_show ➜ Show pause status`
-                        ├─ ▶️ `pause_off ➜ Resume the bot`
-                        ├─ 📝 `setgc ➜ Enable group-wide commands`
-                        ├─ 📋 `showgc ➜ Check group command status`
-                        ├─ 📌 `setq ➜ Set your custom quantifier`
-                        ├─ ⚙️ `setmaxchat ➜ Set max chats to scan`
-                        └─ 📊 `showmaxchat ➜ View current scan count`
-                        
-                        ✉️ *Messaging Utility*
-                        └─ 💌 `send ➜ <number> <your message>` (DM any number)
-                        
-                        ━━━━━━━━━━━━━━━━━━━━
-                        🔔 *Need Help?*
-                        ➤ Type `Quantifier ➜ showmenu` or just `...help`
-                        
-                        💡 *Pro Tips:*
-                        ✔️ Use short, clear inputs for faster replies.
-                        ✔️ After a reply, wait 3–5 seconds to avoid spam triggers.
-                        
-                        🛡️ *Safety Notice:*
-                        _If the Agent takes time to respond, it's protecting your account from being flagged!_
-                        
-                        🤖 *Always here to assist you!* 🤖
-                        """;
+                ───────────────────────────────────────
+                🧾 *Usage*
+                _Format:_ `Quantifier ➜ Command ➜ Input`
+                _Example:_ `// ai ➜ Who is Elon Musk?`
+       \s
+                ───────────────────────────────────────
+                💬 *AI & Chat* \s
+                • `ai`          → General AI chat \s
+                • `personalai`  → Private, personal chat \s
+                • `gpt`         → GPT‑powered chat \s
+       \s
+                🖥 *Agent Control* \s
+                • `help`        → Show this menu \s
+                • `manual`      → Detailed command guide
+       \s
+                ───────────────────────────────────────
+                🛠️ *Admin Commands* \s
+                • `showq`       → Show current prefix \s
+                • `setq`        → Set a new prefix \s
+                • `pause_on`    → Pause the bot \s
+                • `pause_off`   → Resume the bot \s
+                • `pause_show`  → Check pause status \s
+                • `h_restart`   → Hard restart (admin only)
+       \s
+                ───────────────────────────────────────
+                🔍 *Search & Media* \s
+                • `google`      → Google search \s
+                • `yts`         → YouTube search \s
+                • `ytd`         → Download YouTube MP3 \s
+                • `img_url`     → Generate AI image \s
+                • `imgd`        → Download generated image \s
+       \s
+                👨‍🎓 *Dev & Student* \s
+                • `github`      → Auto GitHub commit \s
+                • `setmaxchat`  → Limit chat history scan \s
+                • `showgc`      → Show group‑wide mode \s
+                • `setgc`       → Toggle group‑wide mode \s
+       \s
+               \s
+                ───────────────────────────────────────
+                💡 *Pro Tips* \s
+                – Use **clear, concise** inputs for speed \s
+                – Wait **3–5 sec** between commands to avoid rate limits \s
+       \s
+                🛡️ *Safety* \s
+                Slow response = account protection in action \s
+       \s
+                🤖 *Tweakio is always here to help!* 🤖
+               \s""";
     }
+
 
 }

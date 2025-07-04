@@ -21,6 +21,7 @@ public class UnreadHandler {
             try {
                 return Integer.parseInt(aria.replaceAll("\\D.*", ""));
             } catch (NumberFormatException e) {
+                Extras.logwriter("Unread number format exception // unreadhandler // getUnreadCountOrNull // 1" + e.getMessage());
                 return null;
             }
         }
@@ -28,6 +29,7 @@ public class UnreadHandler {
         try {
             return Integer.parseInt(badge.textContent().trim());
         } catch (NumberFormatException e) {
+            Extras.logwriter("Unread number format exception // unreadhandler // getunreadcountornull // 2" + e.getMessage());
             return null;
         }
     }
@@ -38,10 +40,9 @@ public class UnreadHandler {
     public boolean markAsUnread(Page page, Locator chatRow) {
         try {
             chatRow.click(new Locator.ClickOptions().setButton(MouseButton.RIGHT));
-
             Locator menu = page.locator("div[role='application']");
-            // Check if "Mark as read" is present
             Locator markAsRead = menu.locator("li[role='button'] > span:has-text(\"Mark as read\")");
+
             if (markAsRead.isVisible()) {
                 System.out.println("⚠️ Chat is already unread (has 'Mark as read' option). Skipping...");
                 return false; // No need to mark as unread again
@@ -77,9 +78,11 @@ public class UnreadHandler {
                     return true;
                 }
                 System.out.println("❌ 'Mark as Unread' option not visible.");
+                Extras.logwriter("mark as unread is not visible // unreadhandler // markasunread");
             }
         } catch (Exception e) {
             System.out.println("❌ markAsUnread failed: " + e.getMessage());
+            Extras.logwriter("markAsUnread failed //unreadhandler // markasread: " + e.getMessage());
         }
         return false;
     }

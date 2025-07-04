@@ -1,80 +1,78 @@
 package org.Tweakio.AI.Chats;
 
-import com.google.gson.Gson;
 import okhttp3.*;
 import org.Tweakio.AI.HistoryManager.ChatMemory;
 import org.Tweakio.UserSettings.user;
+import org.Tweakio.WhatsappWeb.Extras;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.Scanner;
 
 public class AgentAI {
-    user u;
-    OkHttpClient client;
-    String apiURL;
-    Gson gson;
-    ChatMemory chatMemory;
-    int totaltokens;
-    String profile ;
+    private final OkHttpClient client;
+    private final ChatMemory chatMemory;
+    private final String apiURL;
 
-    public AgentAI(String  profile) {
-        this.profile = profile;
-        apiURL = user.AgentAIKey; // This is the full POST URL
-        client = new OkHttpClient();
-        gson = new Gson();
-        chatMemory = new ChatMemory();
+    public AgentAI() {
+        this.apiURL = user.AGENT_AI_KEY;
+
+        this.client = new OkHttpClient();
+
+        this.chatMemory = new ChatMemory();
     }
 
     public String sendToAgent(String userInput) {
-        MediaType JSON = MediaType.get("application/json; charset=utf-8");
-        String history = chatMemory.getFormattedHistory("agent_ai",0);
-        history = history.replace("\"", "\\\"");
-        userInput = userInput.replace("\"", "\\\"");
-        history= history+ userInput;
-//        System.out.println("prompt : ---- \n" + history);
-//        System.out.println("--------");
-        String jsonBody = String.format("{\"user_input\": \"%s\"}", history);
+        chatMemory.ensureFilePathExists("agent_ai");
 
-        RequestBody body = RequestBody.create(jsonBody, JSON);
+        String historyTxt = chatMemory.getHistory("agent_ai");  // full raw history
+        String prompt     =
+                "The following is a conversation between a user and an AI assistant. " +
+                        historyTxt +
+                        "User: " + userInput + "\nAI:";
+
+        JSONObject bodyJson = new JSONObject()
+                .put("user_input", prompt);
+        RequestBody body = RequestBody.create(
+                bodyJson.toString(),
+                MediaType.get("application/json; charset=utf-8"));
+
         Request request = new Request.Builder()
                 .url(apiURL)
+                .addHeader("Content-Type", "application/json; charset=utf-8")
                 .post(body)
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) return "❌ Failed: " + response;
-
-            String json = response.body() != null ? response.body().string() : "";
-            JSONObject obj = new JSONObject(json);
-            System.out.println(json);
-
-            if (obj.has("response")) {
-                String botReply = obj.getString("response");
-
-                String sb = "User : " + userInput +
-                        "\n" +
-                        "AI : " + botReply;
-                History(sb);
-
-                return botReply;
-            } else {
-                return "⚠️ Unexpected response: " + json;
+            if (!response.isSuccessful()) {
+                Extras.logwriter("Http error in agent ai : "+response.code() + " ---- Response Message : " + response.message());
+                return "❌ HTTP " + response.code() + ": " + response.message();
             }
 
+            String respBody = response.body() != null ? response.body().string() : "";
+            JSONObject obj = new JSONObject(respBody);
+            String botReply = obj.optString("response", null);
+            if (botReply == null) {
+                Extras.logwriter("error in response in agent ai : "+respBody);
+                return "⚠️ Unexpected response: " + respBody;
+            }
+
+            chatMemory.writeToFile(
+                    "User: " + userInput + "\nAI: " + botReply,
+                    "agent_ai"
+            );
+
+            return botReply;
         } catch (IOException e) {
             return "❌ Error: " + e.getMessage();
         }
     }
 
-    public void History(String chat){
-        chatMemory.writeToFile(chat, "agent_ai");
+    public static void main(String[] args) {
+        AgentAI ai = new AgentAI();
+        System.out.print("Ask GPT: ");
+        String question = new Scanner(System.in).nextLine();
+        String answer   = ai.sendToAgent(question);
+        System.out.println("🤖 AgentAI: " + answer);
     }
-
-//    public static void main(String[] args) {
-//        AgentAI ai = new AgentAI();
-//        System.out.println("Ask GPT : ");
-//        String reply = ai.sendToAgent(new Scanner(System.in).nextLine());
-//        System.out.println("🤖 AgentAI: " + reply);
-//    }
 }

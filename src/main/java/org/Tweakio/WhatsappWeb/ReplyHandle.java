@@ -5,8 +5,8 @@ import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.WaitForSelectorState;
 import org.jetbrains.annotations.NotNull;
 
-import static org.Tweakio.WhatsappWeb.MessH_Modified.RefreshTime;
-import static org.Tweakio.WhatsappWeb.MessH_Modified.debugMode;
+import static org.Tweakio.WhatsappWeb.Brain.RefreshTime;
+import static org.Tweakio.WhatsappWeb.Brain.debugMode;
 //            messageContainer.click(new ElementHandle.ClickOptions().setButton(MouseButton.RIGHT));
 // This Right Click Triggers the context menu of
 //  {
@@ -40,6 +40,7 @@ public class ReplyHandle {
                     .asElement();
             if (msgContainer == null) {
                 System.err.println("⚠️ Could not find message container");
+                Extras.logwriter("Could not find message container // replyhandle // replytoChat");
                 return;
             }
 
@@ -81,6 +82,7 @@ public class ReplyHandle {
 
         } catch (Exception e) {
             if (debugMode) System.err.println("Error in replyToChat: " + e.getMessage());
+            Extras.logwriter("Error in replyToChat // replyhandler : Fallback : " + e.getMessage());
             replyBack(chat, reply, time, sender, cmdTime);
         }
     }
@@ -165,6 +167,7 @@ public class ReplyHandle {
             System.out.printf("📤 Replied: \"%s\"%n", replyMessage);
         } catch (Exception e) {
             if (debugMode) System.err.println("❌ replyBack() failed: " + e.getMessage());
+            Extras.logwriter(" replyBack() failed //replyhandler // replyback : " + e.getMessage());
         }
     }
 }
