@@ -10,6 +10,35 @@ jobs:
   run-tweakio-agent:
     runs-on: ubuntu-latest
 
+    env:
+      PROFILE: ${{ secrets.PROFILE }}
+      BOT_NAME: ${{ secrets.BOT_NAME }}
+      BOT_NUMBER: ${{ secrets.BOT_NUMBER }}
+      ADMIN_NUMBER: ${{ secrets.ADMIN_NUMBER }}
+      ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
+
+      # GitHub
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      REPO_NAME: ${{ secrets.REPO_NAME }}
+      BRANCH_NAME: ${{ secrets.BRANCH_NAME }}
+
+      # API Keys
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+      GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      # Custom Search
+      CSE_ID: ${{ secrets.CSE_ID }}
+
+      # Agent.ai Integration
+      AGENT_AI_KEY: ${{ secrets.AGENT_AI_KEY }}
+      QUANTIFIER: ${{ secrets.QUANTIFIER }}
+      AGENT_ID: ${{ secrets.AGENT_ID }}
+      WEBHOOK_ID: ${{ secrets.WEBHOOK_ID }}
+      BASE_URL: ${{ secrets.BASE_URL }}
+      INTRO_IMG_URL: ${{ secrets.INTRO_IMG_URL }}
+
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v3
@@ -24,4 +53,4 @@ jobs:
         run: mvn clean install
 
       - name: 🚀 Run the Tweakio Agent
-        run: java -jar target/tweakio-agent.jar
+        run: java -DPROFILE="${{ env.PROFILE }}" -jar target/tweakio-agent.jar
