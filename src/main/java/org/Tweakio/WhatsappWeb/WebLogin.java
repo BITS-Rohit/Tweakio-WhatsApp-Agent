@@ -2,7 +2,6 @@ package org.Tweakio.WhatsappWeb;
 
 import com.microsoft.playwright.*;
 import com.microsoft.playwright.options.LoadState;
-//import com.sun.net.httpserver.HttpServer;
 import org.Tweakio.WhatsappWeb.BrowserManager.Browser;
 
 import java.io.IOException;
@@ -13,73 +12,69 @@ import java.util.stream.Stream;
 
 public class WebLogin {
     private static final String WEB_URL = "https://web.whatsapp.com";
-//    private static final Path QR_SAVE_PATH = Paths.get("src/main/java/org/bot/FilesSaved/qr_code.png");
 
     private final Path USER_DATA_DIR;
-
     private final Page page;
+    private final Browser browser;
     Extras e = new Extras();
 
-//    private HttpServer qrServer;
-    private volatile boolean sessionMonitorRunning = false;
-
-    /**
-     * Constructs or reuses the WhatsApp login page using GetPage singleton.
-     */
     public WebLogin(Browser browser) {
-        page = browser.newPage();
-        USER_DATA_DIR = Browser.sessionPath(browser.profile);
+        this.browser = browser;
+        this.page = browser.newPage();
+        this.USER_DATA_DIR = Browser.sessionPath(browser.profile);
     }
 
     /**
-     * Navigate to WhatsApp Web and either save QR or detect a logged-in session.
+     * Navigate to WhatsApp Web and either reuse existing session or perform login and save it.
      */
     public boolean webLogin() {
-        if (!page.url().equals(WEB_URL)) {
-            page.navigate(WEB_URL);
-            Extras.logwriter("Web Login naviagtion // weblogin  : "+page.url());
-        }
-
+        // Path to storage state file (Playwright stores JSON state)
+        Path storageFile = USER_DATA_DIR.resolve("storageState.json");
         try {
+            if (Files.exists(storageFile)) {
+                System.out.println("✅ Existing session found. Skipping QR login.");
+                Extras.logwriter("Existing session detected, skipping login. // weblogin");
+                return true;
+            }
+
+            // No existing session: perform login flow
+            if (!page.url().equals(WEB_URL)) {
+                page.navigate(WEB_URL);
+                Extras.logwriter("WebLogin navigation: " + page.url());
+            }
+
+            // Wait for QR or direct login
             page.waitForLoadState(LoadState.NETWORKIDLE);
             e.sleep(1500 + new Random().nextInt(500));
 
             Locator qr = page.locator("canvas[role='img']");
             if (qr.isVisible()) {
-                System.out.println("📷 QR code detected.");
-                System.out.println("ℹ️ You may scan the QR OR enter login code on your phone.");
-                Extras.logwriter("Qr code detected. && waiting for sign in // weblogin  ");
+                System.out.println("📷 QR code detected. Please scan using your phone.");
+                Extras.logwriter("QR code detected, waiting for scan. // weblogin");
             } else {
-                System.out.println("ℹ️ No QR code visible — waiting for login via other method.");
-                Extras.logwriter("No QR code visible <UNK> waiting for login via other method. // weblogin  ");
+                System.out.println("ℹ️ No QR code visible — waiting for existing session or other login method.");
+                Extras.logwriter("No QR visible, waiting for other login. // weblogin");
             }
 
-            // Always wait for successful login regardless of method
             if (waitForLoginSuccess()) {
-                System.out.println("✅ Login successful.");
-                Extras.logwriter("Login successful. // weblogin  ");
+                System.out.println("✅ Login successful. Saving session state.");
+                Extras.logwriter("Login successful, saving storage state. // weblogin");
+                // Save storage state for future runs
+                page.context().storageState(new BrowserContext.StorageStateOptions().setPath(storageFile));
                 return true;
             } else {
-                System.out.println("❌ Login failed or timeout.");
-                Extras.logwriter("Login failed. // weblogin  ");
-                return false;
+                System.out.println("❌ Login failed or timed out.");
+                Extras.logwriter("Login failed or timeout. // weblogin");
             }
-
-        } catch (PlaywrightException e) {
-            System.out.println("❌ Login failed (Playwright exception): " + e.getMessage());
-            Extras.logwriter("Login failed (Playwright exception) // weblogin : " + e.getMessage());
-        } catch (Exception e) {
-            System.out.println("❌ Login failed (Exception): " + e.getMessage());
-            Extras.logwriter("Login failed (Exception) // weblogin : " + e.getMessage());
+        } catch (PlaywrightException ex) {
+            System.out.println("❌ Playwright exception during login: " + ex.getMessage());
+            Extras.logwriter("Playwright exception // weblogin: " + ex.getMessage());
+        } catch (Exception ex) {
+            System.out.println("❌ Unexpected error during login: " + ex.getMessage());
+            Extras.logwriter("Exception // weblogin: " + ex.getMessage());
         }
-
         return false;
     }
-
-
-    /**
-     * Waits for the WhatsApp chat textbox to appear, indicating login success.
-     */
 
     public boolean waitForLoginSuccess() {
         try {
@@ -87,53 +82,42 @@ public class WebLogin {
                     new Page.WaitForLoadStateOptions().setTimeout(300_000));
             page.waitForSelector("div[role='textbox'] > p.selectable-text.copyable-text",
                     new Page.WaitForSelectorOptions().setTimeout(300_000));
-
-//            if (qrServer != null) qrServer.stop(0);
             return true;
         } catch (PlaywrightException e) {
             System.out.println("❌ Login timeout or failed: " + e.getMessage());
-            Extras.logwriter("Login timeout or failed // weblogin //waitforloginsuccess : " + e.getMessage());
+            Extras.logwriter("Login timeout or failed // waitForLoginSuccess: " + e.getMessage());
         }
         return false;
     }
 
     /**
-     * Periodically checks for an expired QR and clears session files if needed.
+     * Cleans up session if QR reappears (optional monitor).
      */
     private void deleteBrokenSession() {
         try {
             Locator qr = page.locator("canvas[aria-label*='Scan this QR code']");
             if (qr.isVisible()) {
-                System.out.println("🔄 Session expired—resetting...");
-
+                System.out.println("🔄 Session expired — clearing session files.");
+                Extras.logwriter("Session expired, clearing files. // websocket login");
                 try (Stream<Path> paths = Files.walk(USER_DATA_DIR)) {
                     paths.sorted(Comparator.reverseOrder())
                             .forEach(path -> {
-                                try {
-                                    Files.deleteIfExists(path);
-                                } catch (IOException ignored) {
-                                }
+                                try { Files.deleteIfExists(path); } catch (IOException ignored) {}
                             });
                 }
             }
-        } catch (Exception e) {
-            System.out.println("⚠️ Error checking broken session: " + e.getMessage());
-            Extras.logwriter("Error checking broken session //weblogin // deleltebrokensession : " + e.getMessage());
+        } catch (Exception ex) {
+            System.out.println("⚠️ Error checking broken session: " + ex.getMessage());
+            Extras.logwriter("Error checking broken session // deleteBrokenSession: " + ex.getMessage());
         }
     }
 
-    /**
-     * Launches a background thread that resets session if QR reappears.
-     */
     public void startSessionMonitor() {
-        sessionMonitorRunning = true;
         new Thread(() -> {
-            while (sessionMonitorRunning) {
+            while (true) {
                 e.sleep(60_000);
                 deleteBrokenSession();
             }
-            System.out.println("🛑 Session monitor stopped.");
-            Extras.logwriter("Session monitor stopped. // weblogin  // startsessionmonitor");
         }, "SessionMonitor").start();
     }
 
@@ -142,12 +126,11 @@ public class WebLogin {
     }
 
     public void shutdown() {
-        sessionMonitorRunning = false;
-//        if (qrServer != null) qrServer.stop(0);
         if (!page.isClosed()) page.close();
     }
 }
 
+// Dont Delete This Code !!
 //---------------------------------------
 // screenshot & save
 //            byte[] img = qr.screenshot();
