@@ -53,4 +53,4 @@ jobs:
         run: mvn clean install
 
       - name: 🚀 Run the Tweakio Agent
-        run: java -DPROFILE="${{ env.PROFILE }}" -jar target/tweakio-agent.jar
+        run: java -cp target/classes org.Tweakio.WhatsappWeb.WebMain
