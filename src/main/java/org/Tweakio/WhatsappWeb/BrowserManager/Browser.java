@@ -33,7 +33,7 @@ public class Browser {
 
         if (attachToCDP) {
             var browser = playwright.chromium().connectOverCDP("http://localhost:9222");
-            this.context = browser.contexts().getFirst();
+            this.context = browser.contexts().get(0);
             browserMap.put(profileName, context);
 
         } else {
@@ -98,8 +98,8 @@ public class Browser {
 
     public Page newPage() {
         Page page;
-        if (context != null && !context.pages().isEmpty() && context.pages().getFirst().url().equals("about:blank")) {
-            page = context.pages().getFirst();
+        if (context != null && !context.pages().isEmpty() && context.pages().get(0).url().equals("about:blank")) {
+            page = context.pages().get(0);
             pageManager.add(page);
             return page;
         }

@@ -208,9 +208,9 @@ If the intent isn’t explicit, choose the closest valid command.
                 return "Gemini returned no answer.";
             }
 
-            GeminiResponse.Candidate candidate = parsed.candidates.getFirst();
+            GeminiResponse.Candidate candidate = parsed.candidates.get(0);
             if (candidate.content != null && !candidate.content.parts.isEmpty()) {
-                String reply = candidate.content.parts.getFirst().text;
+                String reply = candidate.content.parts.get(0).text;
                 if (chatsave) {
                     String sb = "User: " + query + "\nAI: " + reply;
                     chatmemory.writeToFile(sb, "gemini_ai");

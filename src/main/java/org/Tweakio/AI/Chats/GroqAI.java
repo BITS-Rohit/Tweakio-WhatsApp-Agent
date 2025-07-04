@@ -80,7 +80,7 @@ public class GroqAI {
                 return "⚠️ AI returned nothing.";
             }
 
-            GroqResponse.Message message = response.choices.getFirst().message;
+            GroqResponse.Message message = response.choices.get(0).message;
             String reply = message != null ? message.content : "No message returned.";
 
             if(reply.equals("No message returned."))Extras.logwriter("No message returned. //groq");
