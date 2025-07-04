@@ -16,22 +16,14 @@ jobs:
       BOT_NUMBER: ${{ secrets.BOT_NUMBER }}
       ADMIN_NUMBER: ${{ secrets.ADMIN_NUMBER }}
       ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
-
-      # GitHub
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       REPO_NAME: ${{ secrets.REPO_NAME }}
       BRANCH_NAME: ${{ secrets.BRANCH_NAME }}
-
-      # API Keys
       YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
       GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-
-      # Custom Search
       CSE_ID: ${{ secrets.CSE_ID }}
-
-      # Agent.ai Integration
       AGENT_AI_KEY: ${{ secrets.AGENT_AI_KEY }}
       QUANTIFIER: ${{ secrets.QUANTIFIER }}
       AGENT_ID: ${{ secrets.AGENT_ID }}
@@ -49,11 +41,21 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 🧱 Build and copy dependencies
+      - name: 🧱 Install dependencies for headed browser
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxcomposite1 \
+            libxdamage1 libxrandr2 libgbm1 libasound2 libxshmfence1 libgtk-3-0 libxss1 libx11-xcb1 libxext6 \
+            libxfixes3 libxrender1 libdbus-1-3 libxtst6 libxinerama1 libwoff1 libvpx7 libevent-2.1-7 libopus0 \
+            libsecret-1-0
+
+      - name: 🛠️ Build project & copy dependencies
         run: |
           mvn clean compile
           mkdir -p target/dependency
-          mvn dependency:copy-dependencies -DoutputDirectory=target/dependency -DincludeScope=runtime
+          mvn dependency:copy-dependencies -DoutputDirectory=target/dependency
 
-      - name: 🚀 Run the Tweakio Agent
-        run: java -cp "target/classes:target/dependency/*" org.Tweakio.WhatsappWeb.WebMain
+      - name: 🚀 Run the Tweakio Agent with GUI using xvfb
+        run: |
+          xvfb-run --auto-servernum --server-args='-screen 0 1024x768x24' \
+            java -cp "target/classes:target/dependency/*" org.Tweakio.WhatsappWeb.WebMain
