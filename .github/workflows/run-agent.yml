@@ -49,8 +49,13 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 🛠️ Build with Maven
-        run: mvn clean install
+      - name: 🧰 Copy dependencies to target/dependency
+        run: |
+          mkdir -p target/dependency
+          mvn dependency:copy-dependencies -DoutputDirectory=target/dependency
+
+      - name: 🛠️ Build project
+        run: mvn clean compile
 
       - name: 🚀 Run the Tweakio Agent
-        run: java -cp target/classes org.Tweakio.WhatsappWeb.WebMain
+        run: java -cp "target/classes:target/dependency/*" org.Tweakio.WhatsappWeb.WebMain
