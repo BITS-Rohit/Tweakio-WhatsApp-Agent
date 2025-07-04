@@ -81,7 +81,7 @@ public class WebMain {
                     finalMonitor1.Handler();
                 }, "Message-Monitor");
 
-                monitorThread.setUncaughtExceptionHandler((_, e) -> {
+                monitorThread.setUncaughtExceptionHandler((Ignored, e) -> {
                     Extras.logwriter("Uncaught Exception in Message-Monitor // webmain");
                     throw new RuntimeException(e);
                 });
