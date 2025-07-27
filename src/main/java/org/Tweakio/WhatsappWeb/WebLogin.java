@@ -15,11 +15,9 @@ public class WebLogin {
 
     private final Path USER_DATA_DIR;
     private final Page page;
-    private final Browser browser;
     Extras e = new Extras();
 
     public WebLogin(Browser browser) {
-        this.browser = browser;
         this.page = browser.newPage();
         this.USER_DATA_DIR = Browser.sessionPath(browser.profile);
     }

@@ -4,6 +4,7 @@ import com.microsoft.playwright.ElementHandle;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.PlaywrightException;
+import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.WaitForSelectorState;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -97,7 +98,7 @@ public class Brain {
     }
 
     public static Set<String> banlist = new HashSet<>();
-    public static Map<String, String> Throttling = new HashMap<>();
+//    public static Map<String, String> Throttling = new HashMap<>();
 
     public void MessageToOwner(long time) {
         try {
@@ -136,7 +137,7 @@ public class Brain {
     public void popupRemove() {
         try {
             // Wait up to 10 seconds for the "Continue" button to appear
-            Locator continueBtn = page.getByText("Continue");
+            Locator continueBtn = page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("continue"));
             continueBtn.waitFor(new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE).setTimeout(5_000));
             continueBtn.hover();
             continueBtn.click();
@@ -151,17 +152,14 @@ public class Brain {
     public void Handler() {
         try {
             if (isConnect) MessageToOwner(System.currentTimeMillis());
-            Locator chatlist = page.locator(Chatlist);
-            if (chatlist.count() == 0) {
-                System.out.println("Null ChatList💀💀");
-                return;
-            }
             int i = 1;
             long j = System.currentTimeMillis();
-            while (true) {
+
+            while (page.locator(Chatlist) != null || page.locator(Chatlist).count() != 0) {
+                Locator chatlist = page.locator(Chatlist);
                 if (Math.abs(System.currentTimeMillis() - j) / 1000 > 10 + new Random().nextInt(5)) {
                     System.out.println("Throttle check started ");
-                    ThrottleHandler.OldChatsMark(Throttling, page, unread, extras);
+//                    ThrottleHandler.OldChatsMark(Throttling, page, unread, extras);
                     j = System.currentTimeMillis();
                     System.out.println("Throttle check finished ");
                 }
@@ -170,6 +168,9 @@ public class Brain {
                 i++;
                 // todo prcoess downlodable queues here  // after every cycle
             }
+            System.out.println("Chat List is not working. ");
+            Browser.closeAll(); // Clean up.
+            System.exit(0); // Safe exit
         } catch (RestartException e) {
             Extras.logwriter("Error : Throw re // Brain// Handler");
             throw e;
@@ -183,6 +184,7 @@ public class Brain {
     public void EveryChatCheck(Locator chatlist) {
         try {
             Locator Allchats = chatlist.locator(Chatitems);
+            Allchats.hover();
             int n = Math.min(MaxChat, Allchats.count());
             if (Allchats.count() == 0) {
                 System.out.println("Null ChatList");
@@ -385,19 +387,18 @@ public class Brain {
 
             // Before moving to next check Mark as Unread if processed anything
 //            extras.sleep(1500);
-            if (!Throttling.containsKey(name)) {
-                Throttling.put(name, 15 + new Random().nextInt(4) + "#" + System.currentTimeMillis());
-                unread.markAsUnread(page, chat);
-            } else { // Means it is already in tbe throtle chats
-                String entry = Throttling.get(name);
-                if (hasThrottleExpired(entry)) {
-                    Throttling.remove(name);
-                    unread.markAsUnread(page, chat);
-                } else {
-                    // Todo log it
-                }
-
-            }
+//            if (!Throttling.containsKey(name)) {
+//                Throttling.put(name, 15 + new Random().nextInt(4) + "#" + System.currentTimeMillis());
+//                unread.markAsUnread(page, chat);
+//            } else { // Means it is already in tbe throtle chats
+//                String entry = Throttling.get(name);
+//                if (hasThrottleExpired(entry)) {
+//                    Throttling.remove(name);
+//                    unread.markAsUnread(page, chat);
+//                } else {
+//                    // Todo log it
+//                }
+//            }
 
 
         } catch (RestartException re) {
@@ -521,19 +522,19 @@ public class Brain {
                     replyHandle.replyToChat(chat, target, amazonIN.GetContent(query), time, sender, cmdTime);
                     break;
 
-                case "love", "romantic" , "romance":
-                    String al = typeai.askType("love",query+"Sender : "+sender);
+                case "love", "romantic", "romance":
+                    String al = typeai.askType("love", query + "Sender : " + sender);
                     replyHandle.replyToChat(chat, target, al, time, sender, cmdTime);
                     break;
 
-                case"emo" , "emotional", "therapist":
-                    String el = typeai.askType("therapist",query);
+                case "emo", "emotional", "therapist":
+                    String el = typeai.askType("therapist", query);
                     replyHandle.replyToChat(chat, target, el, time, sender, cmdTime);
                     break;
 
-                case "shraddha" , "shradha", "sh" :
-                    String  qq = "[Sender- %s : %s] : %s".formatted(Extras.realtime() ,sender, query) ;
-                    String sl =  typeai.askType("shraddha",qq);
+                case "shraddha", "shradha", "sh":
+                    String qq = "[Sender- %s : %s] : %s".formatted(Extras.realtime(), sender, query);
+                    String sl = typeai.askType("shraddha", qq);
                     replyHandle.replyToChat(chat, target, sl, time, sender, cmdTime);
                     break;
 
@@ -776,6 +777,6 @@ public class Brain {
 //                    String phone = sendParts[0];
 //                    String message = sendParts[1];
 //                    if (extras.sendMessageToChat(page, phone, message)) {
-//                        replyHandle.replyToChat(chat, target, "✅Done Sending.. ", time, sender, cmdTime);
+//                        replyHandle.replyToChat(chat, target, "✅Done Sending... ", time, sender, cmdTime);
 //                    }
 //                    break;

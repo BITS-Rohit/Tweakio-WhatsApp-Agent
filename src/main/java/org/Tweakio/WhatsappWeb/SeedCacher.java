@@ -5,9 +5,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.WaitForSelectorState;
 import org.Tweakio.UserSettings.user;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.Tweakio.WhatsappWeb.Brain.*;
 
@@ -15,17 +13,25 @@ public class SeedCacher {
     Extras extras = new Extras();
     UnreadHandler unread;
     Page page ;
+
+    List<String> admin_cmd = new ArrayList<>();
     SeedCacher(Page page ) {
         this.page = page;
         unread = new UnreadHandler();
+        admin_cmd.add("pause_on");
+        admin_cmd.add("pause_off");
+        admin_cmd.add("pause_show");
+        admin_cmd.add("showq");
+        admin_cmd.add(NLP);
+        admin_cmd.add(user.QUANTIFIER+" ");
     }
 
     public void seedCache(Map<String, Set<String>> processedIds) {
         try {
             System.out.println("Seed Cacher Started -----------");
             Extras.logwriter("Seed Cacher Started -----------");
-            Locator chatlist = page.locator(Chatlist);
-            Locator allChats = chatlist.locator(Chatitems);
+
+            Locator allChats = page.locator(Chatlist).locator(Chatitems);
             int n = Math.min(MaxChat, allChats.count());
             for (int i = 0; i < n; i++) {
                 Locator chat = allChats.nth(i);
@@ -48,27 +54,14 @@ public class SeedCacher {
                 for (int j = 0; j < botMessages.count(); j++) {
                     Locator msg = botMessages.nth(j);
                     String text = msg.textContent().trim().toLowerCase();
-                    if (text.startsWith(user.QUANTIFIER + " ")
-                            || text.startsWith("showq")
-                            || text.startsWith("pause_on")
-                            || text.startsWith("pause_off")
-                            || text.startsWith("pause_show")
-                            || text.startsWith(NLP)) {
-                        String rawId = msg.getAttribute("data-id");
-                        String nId = extras.normalizeMessageId(rawId);
-                        processedIds.get(name).add(nId);
-                    }
+                    if (admin_cmd.contains(text.split(" ")[0])) processedIds.get(name).add(extras.normalizeMessageId(msg.getAttribute("data-id")));
                 }
                 Locator inputBox = page.locator("div[aria-label='Type a message'][role='textbox']");
-                inputBox.waitFor(new Locator.WaitForOptions()
-                        .setState(WaitForSelectorState.VISIBLE)
-                        .setTimeout(2_000)
-                );
                 if(inputBox.isVisible()){
                     inputBox.hover();
                     inputBox.click();
                     inputBox.fill("");
-                }
+                }else Extras.logwriter("Input box in Seed Cacher is not visible");
                 extras.sleep(1000); // Sleep for 1 sec every time for human like behaviour
                 if(unread.markAsUnread(page,chat)) {
                     System.out.println("Chat Marked as Unread");

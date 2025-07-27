@@ -13,12 +13,14 @@ import static org.Tweakio.WhatsappWeb.Brain.debugMode;
 //  Group Info , Clear Chat , Exit chat , block , mute ,disappering ,  favorites etc.
 //  }
 
+
 public class ReplyHandle {
-    Extras extras;
-    Page page;
+    private final Extras extras;
+    private final Page page;
+    private static final String INPUT_BOX_SELECTOR = "div[role='textbox'][aria-label='Type a message']";
 
     public ReplyHandle(Page page) {
-        extras = new Extras();
+        this.extras = new Extras();
         this.page = page;
     }
 
@@ -34,22 +36,24 @@ public class ReplyHandle {
             chat.hover();
             chat.click();
 
-
             ElementHandle msgContainer = message
                     .evaluateHandle("el => el.closest(\"div[data-id]\")")
                     .asElement();
             if (msgContainer == null) {
                 System.err.println("⚠️ Could not find message container");
-                Extras.logwriter("Could not find message container // replyhandle // replytoChat");
+                Extras.logwriter("Could not find message container // replyhandle // replyToChat");
                 return;
             }
 
             msgContainer.hover();
             msgContainer.click();
 
-            tryEdgeDoxubleClick(msgContainer, /* leftOffset= */ 10);
-            tryEdgeDoxubleClick(msgContainer, /* rightOffset= */ -10);
+            // Try edge clicks to trigger input open
+            if (!tryEdgeDoubleClick(msgContainer, 10)) {
+                tryEdgeDoubleClick(msgContainer, -10);
+            }
 
+            // Final fallback: force double click
             msgContainer.hover();
             msgContainer.click(new ElementHandle.ClickOptions()
                     .setClickCount(2)
@@ -57,27 +61,26 @@ public class ReplyHandle {
             );
             page.waitForTimeout(300);
 
-            Locator inputBox = page.locator("div[role='textbox'][aria-label='Type a message']");
+            Locator inputBox = page.locator(INPUT_BOX_SELECTOR);
             inputBox.waitFor(new Locator.WaitForOptions()
                     .setState(WaitForSelectorState.VISIBLE)
-                    .setTimeout(2_000)
+                    .setTimeout(2000)
             );
 
             String raw = Extras.bootime(cmdTime).replaceAll("\\D+", "");
-            String payload = getString(reply, raw);
-
-
+            String payload = getFormattedReply(reply, raw);
 
             inputBox.hover();
             inputBox.click();
+            inputBox.fill(""); // clear existing
             inputBox.fill(payload);
-            System.out.println("----------------- \n"+payload);
-            System.out.println("---------------------");
+
+            System.out.println("----------------- \n" + payload + "\n---------------------");
             extras.sleep(1000);
+
             page.keyboard().press("Enter");
-
-
             System.out.println("✅ Replied via double-click: " + reply);
+
             extras.sleep(RefreshTime);
 
         } catch (Exception e) {
@@ -87,90 +90,87 @@ public class ReplyHandle {
         }
     }
 
-
     /**
      * Attempts to double-click near one horizontal edge of the element.
-     * If offsetX is positive, clicks at x = box.x + offsetX.
-     * If offsetX is negative, clicks at x = box.x + box.width + offsetX.
-     * Returns true if the reply-input becomes visible within 1s.
+     * Returns true if input becomes visible.
      */
-    private void tryEdgeDoxubleClick(ElementHandle el, double offsetX) {
+    private boolean tryEdgeDoubleClick(ElementHandle el, double offsetX) {
         el.scrollIntoViewIfNeeded();
-        // compute box
         BoundingBox box = el.boundingBox();
-        if (box == null) return;
+        if (box == null) return false;
 
-        double x;
-        if (offsetX >= 0) {
-            x = box.x + offsetX;
-        } else {
-            x = box.x + box.width + offsetX;
-        }
+        double x = offsetX >= 0 ? box.x + offsetX : box.x + box.width + offsetX;
         double y = box.y + (box.height / 2);
 
-        // perform the double-click
         page.mouse().move(x, y);
         page.mouse().dblclick(x, y, new Mouse.DblclickOptions().setDelay(50));
+        page.waitForTimeout(300);
+
+        return page.locator(INPUT_BOX_SELECTOR).isVisible();
     }
 
-
+    /**
+     * Builds the reply message with execution time.
+     */
     @NotNull
-    private static String getString(String reply, String raw) {
-        int secs ;
+    private static String getFormattedReply(String reply, String rawTime) {
+        int secs;
         try {
-            secs = Integer.parseInt(raw);
+            secs = Integer.parseInt(rawTime);
         } catch (NumberFormatException ex) {
-            secs=0;
+            secs = 0;
         }
         secs += 1;
         String elapsed = secs + " sec";
+
         return "---------------\n"
                 + "Command Execute Time: " + elapsed + "\n"
                 + reply + "\n"
                 + "---------------";
     }
 
-
-    void replyBack(ElementHandle chat, String replyMessage, String time, String sender, long cmdTime) {
+    public void replyBack(ElementHandle chat, String replyMessage, String time, String sender, long cmdTime) {
         try {
             if (replyMessage == null || replyMessage.isEmpty()) {
                 replyMessage = "Answer Not Found for this";
             }
+
             chat.click();
             extras.sleep(200);
 
-            Locator inputBox = page.locator("div[aria-label='Type a message'][role='textbox']");
+            Locator inputBox = page.locator(INPUT_BOX_SELECTOR);
             inputBox.waitFor(new Locator.WaitForOptions()
                     .setState(WaitForSelectorState.VISIBLE)
-                    .setTimeout(2_000)
+                    .setTimeout(2000)
             );
 
             inputBox.click();
-            inputBox.fill("");      // clear any existing text
-            StringBuilder sb = new StringBuilder();
-            sb.append("------------------");
-            sb.append("\n");
-            sb.append("Sender/Chat Number : ").append(sender);
-            sb.append("\n");
-            sb.append("Command Recieved at : ").append(time);
-            sb.append("\n");
-            String cmdBoot = Extras.bootime(cmdTime);
-            cmdBoot = String.valueOf(Integer.parseInt(cmdBoot)+1);
-            sb.append("Command Execution Time : ").append(cmdBoot).append("sec");
-            sb.append("\n");
-            sb.append("------------------");
-            sb.append("\n");
-            sb.append(replyMessage);
-            inputBox.fill(sb.toString());
+            inputBox.fill(""); // clear first
 
+            String cmdBoot = Extras.bootime(cmdTime).replaceAll("\\D+", "");
+            int elapsed = 0;
+            try {
+                elapsed = Integer.parseInt(cmdBoot) + 1;
+            } catch (NumberFormatException ignored) {}
+
+            String sb = "------------------\n" +
+                    "Sender/Chat Number : " + sender + "\n" +
+                    "Command Recieved at : " + time + "\n" +
+                    "Command Execution Time : " + elapsed + "sec\n" +
+                    "------------------\n" +
+                    replyMessage;
+
+            inputBox.fill(sb);
             page.keyboard().press("Enter");
-            System.out.printf("📤 Replied: \"%s\"%n", replyMessage);
+
+            System.out.printf("📤 Replied (fallback): \"%s\"%n", replyMessage);
         } catch (Exception e) {
             if (debugMode) System.err.println("❌ replyBack() failed: " + e.getMessage());
-            Extras.logwriter(" replyBack() failed //replyhandler // replyback : " + e.getMessage());
+            Extras.logwriter("replyBack() failed // replyhandler : " + e.getMessage());
         }
     }
 }
+
 
 //public void reactToMessage(ElementHandle messageContainer, String emojiTitle) {
 //    // 1) Hover to surface the reaction button
