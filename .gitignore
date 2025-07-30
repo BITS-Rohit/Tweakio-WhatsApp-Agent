@@ -1,12 +1,15 @@
 # Maven
 target/
 !.mvn/wrapper/maven-wrapper.jar
+syslogs/
 
 # IntelliJ IDEA
 .idea/
 *.iws
 *.iml
 *.ipr
+
+*.env
 
 # Eclipse
 .apt_generated
@@ -16,6 +19,8 @@ target/
 .settings
 .springBeans
 .sts4-cache
+
+.github // Github flow blocked.
 
 # NetBeans
 /nbproject/private/
