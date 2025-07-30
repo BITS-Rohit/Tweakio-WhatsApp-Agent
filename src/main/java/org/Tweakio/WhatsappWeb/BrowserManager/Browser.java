@@ -206,10 +206,10 @@ public class Browser {
 
         for (int i = 0; i <= steps; i++) {
             double t = (double) i / steps;
-            double cx1 = startX + 100;
-            double cy1 = startY + 50;
-            double cx2 = targetX - 100;
-            double cy2 = targetY - 50;
+            double cx1 = startX + rand.nextInt(80,100);
+            double cy1 = startY + rand.nextInt(40,50);
+            double cx2 = targetX - rand.nextInt(80,100);
+            double cy2 = targetY - rand.nextInt(40,50);
 
             double x = Math.pow(1 - t, 3) * startX + 3 * Math.pow(1 - t, 2) * t * cx1 + 3 * (1 - t) * Math.pow(t, 2) * cx2 + Math.pow(t, 3) * targetX;
             double y = Math.pow(1 - t, 3) * startY + 3 * Math.pow(1 - t, 2) * t * cy1 + 3 * (1 - t) * Math.pow(t, 2) * cy2 + Math.pow(t, 3) * targetY;
@@ -225,7 +225,6 @@ public class Browser {
             sleep(100 + rand.nextInt(100));
         }
     }
-
 }
 
 
