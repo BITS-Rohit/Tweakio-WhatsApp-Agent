@@ -10,16 +10,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Browser {
     static public boolean HEADLESS = false;
     private static volatile Playwright playwright;
     private static final Map<String, Browser> instances = new ConcurrentHashMap<>();
-    private static final Set<Page> pageManager = new CopyOnWriteArraySet<>(); // Future refences Ready page Manager
     private static final Map<String, BrowserContext> browserMap = new ConcurrentHashMap<>();
 
     private final BrowserContext context;
@@ -27,7 +24,7 @@ public class Browser {
     static Random rand = new Random();
 
     private Browser(String profileName, boolean attachToCDP /*, String proxy */) {
-        profile = profileName;
+        this.profile = profileName;
         initPlaywright();
 
 
@@ -38,8 +35,7 @@ public class Browser {
 
         } else {
             Path userDir = sessionPath(profileName);
-            var opts = Scripts.getChromeOptions();
-
+            BrowserType.LaunchPersistentContextOptions options = Scripts.getChromeOptions();
             // Add proxy if specified
 //            if (proxy != null && !proxy.isEmpty()) {
 //                String[] proxyParts = proxy.split(":");
@@ -52,12 +48,12 @@ public class Browser {
             //                "192.168.1.2:8080",
             //                "192.168.1.3:8080"
             //        );
-
             System.out.println("Launching browser with profile: " + userDir);
-            this.context = playwright.chromium().launchPersistentContext(userDir, opts);
+            this.context = playwright.chromium().launchPersistentContext(userDir, options);
             System.out.println("Browser launched successfully.");
 
             this.context.addInitScript(Scripts.getStealthScript());
+            this.context.addInitScript(Scripts.mouseUI); // Mouse UI script.
             this.context.setExtraHTTPHeaders(Scripts.getHttpHeaders()); // headers
         }
     }
@@ -100,7 +96,6 @@ public class Browser {
         Page page;
         if (context != null && !context.pages().isEmpty() && context.pages().get(0).url().equals("about:blank")) {
             page = context.pages().get(0);
-            pageManager.add(page);
             return page;
         }
         if (context == null) {
@@ -231,25 +226,6 @@ public class Browser {
         }
     }
 
-//    public static void main(String[] args) throws InterruptedException {
-//        Browser b = Browser.getInstance("rohit1", false);
-//        Page page = b.newPage();
-//        page.bringToFront();
-//
-//        // First visit to warm up
-//        page.navigate("https://google.com");
-//        GeneralScraper s = new GeneralScraper(b);
-//
-//        System.out.println(s.getHtmlWithJsLoaded("https://in.pinterest.com/pin/1071082723882103076/"));
-//        page.waitForLoadState(LoadState.NETWORKIDLE);
-//        sleep(2000 + new Random().nextInt(3000));
-//
-//        // Real navigation
-//        page.navigate("https://bot.sannysoft.com");
-//        sleep(4000 + new Random().nextInt(3000));
-//        page.navigate("https://amiunique.org/fingerprint");
-//        sleep(4000 + new Random().nextInt(3000));
-//    }
 }
 
 

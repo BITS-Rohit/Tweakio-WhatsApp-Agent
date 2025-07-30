@@ -29,6 +29,11 @@ target/
 
 # macOS
 .DS_Store
+
+# Directories
 /ENV
 /src/Sessions
 /src/main/java/org/Tweakio/AI/ChatLogs
+/src/main/java/org/Tweakio/FilesSaved/
+# Ignore saved_data.ser
+/src/main/java/org/Tweakio/FilesSaved/saved_data.ser
