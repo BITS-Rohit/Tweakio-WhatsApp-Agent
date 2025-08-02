@@ -2,6 +2,10 @@ package org.Tweakio.WhatsappWeb.BrowserManager;
 
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.ForcedColors;
+import com.microsoft.playwright.options.Geolocation;
+import com.microsoft.playwright.options.ReducedMotion;
+import com.microsoft.playwright.options.ServiceWorkerPolicy;
 
 import java.nio.file.Paths;
 import java.util.List;
@@ -23,6 +27,14 @@ public class Scripts {
         return new BrowserType.LaunchPersistentContextOptions()
                 .setExecutablePath(Paths.get("/usr/bin/google-chrome"))
                 .setHeadless(HEADLESS)
+                .setAcceptDownloads(true)
+                .setDeviceScaleFactor(2.0)
+                .setForcedColors(ForcedColors.NONE)
+                .setTimezoneId("Asia/Kolkata")
+                .setGeolocation(new Geolocation(76.9921,27.8432))
+                .setReducedMotion(ReducedMotion.NO_PREFERENCE)
+                .setIgnoreHTTPSErrors(true)
+                .setServiceWorkers(ServiceWorkerPolicy.ALLOW)
                 .setViewportSize(1280, 720)
                 .setLocale("en-US")
                 .setUserAgent(userAgent)

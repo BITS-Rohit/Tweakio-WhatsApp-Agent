@@ -252,7 +252,7 @@ public class Brain {
                 System.out.println("No Bot Chats 🔻🔻🔻");
                 return;
             }
-            System.out.println("==> Messages Loaded ✅ " + count);
+            System.out.println("==> Messages Loaded :  " + count);
             System.out.println("*━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
             // Oldest → Newest

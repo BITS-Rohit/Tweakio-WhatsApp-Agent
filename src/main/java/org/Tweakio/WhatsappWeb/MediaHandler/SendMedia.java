@@ -56,7 +56,7 @@ public class SendMedia {
                 captionBox.click();
                 captionBox.fill(reply);
             } else {
-                System.out.println("ℹ️ TEXTBOX not found or not applicable //Send media.");
+                System.out.println("ℹ TEXTBOX not found or not applicable //Send media.");
             }
 
             Locator attachBtn = page.locator("button[title='Attach']");

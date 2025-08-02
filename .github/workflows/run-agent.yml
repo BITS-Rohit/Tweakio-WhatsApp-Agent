@@ -2,7 +2,7 @@ name: Run Tweakio WhatsApp Agent
 
 on:
   push:
-    branches: [ main ]
+    branches: [ test ]
   schedule:
     - cron: '0 */5 * * *'
   workflow_dispatch:
