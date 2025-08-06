@@ -1,26 +1,28 @@
 package org.Tweakio.WhatsappWeb;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.io.*;
+import java.nio.file.*;
+import java.util.*;
 
-public class MapSerializer {
+public final class MapSerializer {
+    private static final Path FILE_PATH =
+            Paths.get("src/main/java/org/Tweakio/FilesSaved/saved_data.ser");
 
-    private static final Path FILE_PATH = Paths.get("src/main/java/org/Tweakio/FilesSaved/saved_data.ser");
+    private MapSerializer() {
+        // no instances
+    }
 
     public static void serialize(Map<String, Set<String>> map) {
-        try (ObjectOutputStream oos = new ObjectOutputStream(Files.newOutputStream(FILE_PATH))) {
-            oos.writeObject(map);
-            System.out.println("✅ Map serialized to file.");
+        try {
+            // make sure directory exists
+            Files.createDirectories(FILE_PATH.getParent());
+
+            try (var oos = new ObjectOutputStream(Files.newOutputStream(FILE_PATH))) {
+                oos.writeObject(map);
+                System.out.println("✅ Map serialized to file.");
+            }
         } catch (IOException e) {
-            System.err.println("❌ Error during serialization: " + e.getMessage());
-            Extras.logwriter("Error during serialization //mapserialzier // serialize : " + e.getMessage());
+            logError("Error during serialization", e);
         }
     }
 
@@ -30,20 +32,22 @@ public class MapSerializer {
             System.out.println("ℹ️ No previous data file found. Returning empty map.");
             return new HashMap<>();
         }
-        try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(FILE_PATH))) {
-            Object obj = ois.readObject();
+        try (var ois = new ObjectInputStream(Files.newInputStream(FILE_PATH))) {
+            var obj = ois.readObject();
             if (obj instanceof Map<?, ?>) {
                 return (Map<String, Set<String>>) obj;
-            }
-            else {
-                System.err.println("❌ Deserialized object is not a Map.");
-                Extras.logwriter("Error ---> Deserialized object is not a Map. //mapserialzier // deserialize ");
-                return new HashMap<>();
+            } else {
+                logError("Deserialized object is not a Map", null);
             }
         } catch (IOException | ClassNotFoundException e) {
-            System.err.println("❌ Error during deserialization: " + e.getMessage());
-            Extras.logwriter("Error during deserialization // mapserailzer // deserilaize : " + e.getMessage());
-            return new HashMap<>();
+            logError("Error during deserialization", e);
         }
+        return new HashMap<>();
+    }
+
+    private static void logError(String message, Exception e) {
+        var full = message + (e != null ? ": " + e.getMessage() : "");
+        System.err.println("❌ " + full);
+        Extras.logwriter("MapSerializer // " + full);
     }
 }

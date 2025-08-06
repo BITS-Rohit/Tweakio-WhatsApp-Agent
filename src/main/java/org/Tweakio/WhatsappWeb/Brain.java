@@ -22,7 +22,6 @@ import org.Tweakio.SearchSites.Youtube.YoutubeAPI;
 import org.Tweakio.UserSettings.ConfigStore;
 import org.Tweakio.UserSettings.user;
 import org.Tweakio.WhatsappWeb.BrowserManager.Browser;
-import org.Tweakio.WhatsappWeb.MediaHandler.SendMedia;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -54,7 +53,7 @@ public class Brain {
     private final String BotNumber;
     String Quantifier = user.QUANTIFIER;
     static String NLP = "/say";
-    public static final boolean debugMode = true;
+    public static final boolean debugMode = false;
     private boolean isGlobalCheck = false;
     private boolean loginAnnounced = false;
     private boolean pause = false;
@@ -151,68 +150,63 @@ public class Brain {
 
     public void Handler() {
         try {
-            if (isConnect) MessageToOwner(System.currentTimeMillis());
-            int i = 1;
-            long j = System.currentTimeMillis();
+//            if (isConnect) MessageToOwner(System.currentTimeMillis());
 
-            while (page.locator(Chatlist) != null || page.locator(Chatlist).count() != 0) {
-                Locator chatlist = page.locator(Chatlist);
-                if (Math.abs(System.currentTimeMillis() - j) / 1000 > 10 + new Random().nextInt(5)) {
-                    System.out.println("Throttle check started ");
-//                    ThrottleHandler.OldChatsMark(Throttling, page, unread, extras);
-                    j = System.currentTimeMillis();
-                    System.out.println("Throttle check finished ");
+
+            System.out.println("---- Starting Unified Chat Handler ----");
+            int cycle = 1;
+
+            while (true) {
+                Locator chatListLocator = page.locator(Chatlist);
+                Locator chatButtons = chatListLocator
+                        .getByRole(AriaRole.LISTITEM)
+                        .getByRole(AriaRole.BUTTON);
+
+                int totalChats = chatButtons.count();
+                if (totalChats == 0) {
+                    System.out.println("No chats found. Exiting handler.");
+                    break;
                 }
-                System.out.println("\n 🌎New Chat Check==================>>>>>>>>>>>>>>> " + i);
-                EveryChatCheck(chatlist);
-                i++;
-                // todo prcoess downlodable queues here  // after every cycle
+
+                int toProcess = Math.min(totalChats, MaxChat);
+                System.out.printf("\n---- Cycle %d: %d chats to process (of %d total) ----%n",
+                        cycle, toProcess, totalChats);
+
+                for (int i = 0; i < toProcess; i++) {
+                    Locator chat = chatButtons.nth(i);
+                    System.out.printf("→ Processing chat #%d%n", i + 1);
+                    try {
+//                        chat.hover();
+                        checkChat(chat);
+                    } catch (RestartException re) {
+                        Extras.logwriter("Restart requested during chat #" + (i + 1));
+                        throw re;
+                    } catch (Exception e) {
+                        Extras.logwriter("Error in checkChat on chat #" + (i + 1) + ": " + e.getMessage());
+                        if (debugMode) {
+                            System.out.println("Error in checkChat: " + e.getMessage());
+                        }
+                    }
+
+                    extras.sleep(100 + new Random().nextInt(200));
+                }
+                cycle++;
             }
-            System.out.println("Chat List is not working. ");
-            Browser.closeAll(); // Clean up.
-            System.exit(0); // Safe exit
+
+            // 4) Clean-up once the loop ends
+            System.out.println("Handler finished. Closing browser.");
+            Browser.closeAll();
+            System.exit(0);
+
         } catch (RestartException e) {
-            Extras.logwriter("Error : Throw re // Brain// Handler");
+            Extras.logwriter("RestartException in UnifiedChatHandler");
             throw e;
         } catch (Exception e) {
-            if ("User requested restart".equals(e.getMessage())) throw e;
-            System.out.println("Error💀💀 : " + e.getMessage());
-            Extras.logwriter("Error // Brain// Handler" + e.getMessage());
+            Extras.logwriter("Unhandled error in UnifiedChatHandler: " + e.getMessage());
+            System.out.println("Error 💀: " + e.getMessage());
         }
     }
 
-    public void EveryChatCheck(Locator chatlist) {
-        try {
-            Locator Allchats = chatlist.locator(Chatitems);
-            Allchats.hover();
-            int n = Math.min(MaxChat, Allchats.count());
-            if (Allchats.count() == 0) {
-                System.out.println("Null ChatList");
-                return;
-            }
-            if (debugMode) {
-                System.out.println("Total Chats Fetchable : " + Allchats.count());
-                System.out.println("Current Fetching chats : " + n);
-            }
-
-            for (int i = 0; i < n; i++) {
-                Locator chat = Allchats.nth(i);
-                System.out.println("---- Chat no. :  " + (i + 1));
-                checkChat(chat); // This will process all bot commands for this chat
-
-                // At this interval we will add a queue for Time taking req
-
-                extras.sleep(1_00);
-            }
-
-        } catch (RestartException re) {
-            Extras.logwriter("Throw re // Brain// EveryChatCheck");
-            throw re;
-        } catch (Exception e) {
-            if (debugMode) System.out.println("Error 💀💀 : " + e.getMessage());
-            Extras.logwriter("Error -> // Brain// EveryChatCheck : " + e.getMessage());
-        }
-    }
 
     private void checkChat(Locator chat) {
         try {
@@ -223,24 +217,26 @@ public class Brain {
             String name = extras.getChatName(chat);
             System.out.println("==> Chat Name : " + name);
 
-            // Ban------------------
-            if (banlist.contains(name)) {
-                System.out.println("[Banned Chat] ");
-                return;
-            }
+            Locator you = chat.locator("role=gridcell").locator("text=\"(You)\"");
 
-            // Pre Maturly Check
-            Integer c = unread.getUnreadCountOrNull(chat);
-            if (c != null && c == 0) {
-                System.out.println("Skippable... ");
-                return;
+            // Personal Chat check manually.
+            if (!you.isVisible()) {
+
+                //Todo  need fixation for the ban
+
+                // Pre Maturly Check
+                Integer c = unread.getUnreadCountOrNull(chat);
+                if (c != null && c == 0) {
+                    System.out.println("Skippable... ");
+                    return;
+                }
+                System.out.println("Count : " + c);
             }
-            System.out.println("Count : " + c);
+            else System.out.println("You  is visible : "+name);
 
             cmdTime = System.currentTimeMillis();
             chat.hover();
             chat.click();
-
 
             // Ensure we have a set to track this chat’s IDs
             processedIds.putIfAbsent(name, new HashSet<>());
@@ -269,6 +265,7 @@ public class Brain {
                         (parts.length >= 2 && parts[0].equalsIgnoreCase(Quantifier) || parts[0].equalsIgnoreCase(NLP));
 
                 if (!check) continue;
+                System.out.println("Message ==> " + parts[0]);
 
                 // --- extract & normalize data-id into N_ID ---
                 String rawId = msg.getAttribute("data-id");
@@ -444,7 +441,7 @@ public class Brain {
         } else if (fname.equals("img_url"))
             replyHandle.replyToChat(chat, target, dallE3.get_Pic_Url_With_Prompt(query), time, sender, cmdTime);
         else if (fname.equals("imgd"))
-            sendMedia.SendFile(chat, target, "Downloaded!!", time, sender, cmdTime, "image", dallE3.downloadImageFromInput(query).toString(), page);
+            sendMedia.SendFile(chat, target, "Downloaded!!", time, sender, cmdTime, "image", dallE3.downloadImageFromInput(query).toString());
         else if (!query.isEmpty()) {
             switch (fname) {
                 case "setmaxchat":
@@ -462,7 +459,7 @@ public class Brain {
                         String[] res = new String[1];
                         String[] name = new String[1];
                         if (youtubeAPI.ytdownloadfromUrls(query, res, name)) {
-                            sendMedia.SendFile(chat, target, "SuccessFully Downloaded -> Here is ur file", time, sender, cmdTime, "document", res[0], page);
+                            sendMedia.SendFile(chat, target, "SuccessFully Downloaded -> Here is ur file", time, sender, cmdTime, "document", res[0]);
                         } else {
                             replyHandle.replyToChat(chat, target, "Error in download...", time, sender, cmdTime);
                         }
@@ -557,7 +554,7 @@ public class Brain {
     public void ShowMenu(ElementHandle chat, ElementHandle target, String t, String s) {
         String MenuMessage = menu.Menu();
 
-        sendMedia.SendFile(chat, target, MenuMessage, t, s, cmdTime, "image", dallE3.downloadImageFromInput(user.INTRO_IMG_URL + "##intro").toString(), page);
+        sendMedia.SendFile(chat, target, MenuMessage, t, s, cmdTime, "image", dallE3.downloadImageFromInput(user.INTRO_IMG_URL + "##intro").toString());
 
     }
 
@@ -630,7 +627,7 @@ public class Brain {
             if (dp_img.containsKey(name)) {
                 sendMedia.SendFile(chat, target, "DP of " + name,
                         time, sender, cmdTime, "image",
-                        dp_img.get(name).toString(), page);
+                        dp_img.get(name).toString());
                 return true;
             }
 
@@ -694,7 +691,7 @@ public class Brain {
                 // 8) Cache & send
                 dp_img.put(name, file);
                 sendMedia.SendFile(chat, target, "DP of " + name,
-                        time, sender, cmdTime, "image", file.toString(), page);
+                        time, sender, cmdTime, "image", file.toString());
 
                 System.out.println("✅ Saved full‑res DP → " + file);
                 return true;

@@ -30,6 +30,7 @@ public class WebLogin {
         Path storageFile = USER_DATA_DIR.resolve("storageState.json");
         try {
             if (Files.exists(storageFile)) {
+                if (!page.url().equals(WEB_URL)) page.navigate(WEB_URL);
                 System.out.println("✅ Existing session found. Skipping QR login.");
                 Extras.logwriter("Existing session detected, skipping login. // weblogin");
                 return true;
